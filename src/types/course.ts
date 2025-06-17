@@ -1,9 +1,9 @@
-import type { Question } from './quiz';
+import type {Question} from './quiz';
 
 export interface Course {
-  id: string;
-  name: string;
-  description?: string;
-  questions: Question[];
-  createdAt: number;
+    id: string;
+    name: string;
+    description?: string;
+    questions: Question[];
+    createdAt: number;
 } 

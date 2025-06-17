@@ -1,28 +1,15 @@
-import {useState, useEffect, useCallback} from 'react';
-import {
-    Card,
-    Typography,
-    Space,
-    Button,
-    Progress,
-    Modal,
-    message,
-    Row,
-    Col,
-    Radio,
-    Checkbox,
-    Spin
-} from 'antd';
-import {useSearchParams, useNavigate} from 'react-router-dom';
-import {getQuestionsByCourseId, getCourseById} from '../services/courseService';
+import {useCallback, useEffect, useState} from 'react';
+import {Button, Card, Checkbox, Col, message, Modal, Progress, Radio, Row, Space, Spin, Typography} from 'antd';
+import {useNavigate, useSearchParams} from 'react-router-dom';
+import {getCourseById, getQuestionsByCourseId} from '../services/courseService';
 import type {Question} from '../types/quiz';
 import {
-    ClockCircleOutlined,
     CheckCircleOutlined,
+    ClockCircleOutlined,
     CloseCircleOutlined,
+    ExclamationCircleOutlined,
     LeftOutlined,
-    RightOutlined,
-    ExclamationCircleOutlined
+    RightOutlined
 } from '@ant-design/icons';
 
 const {Title, Text} = Typography;
@@ -77,12 +64,12 @@ const QuestionCard = ({
                 <Text style={{whiteSpace: 'pre-line'}}>{question.question}</Text>
                 <Space direction="vertical" style={{width: '100%'}}>
                     {Object.entries(question.options).map(([key, value]) => (
-                        <div 
-                            key={key} 
+                        <div
+                            key={key}
                             onClick={() => !isReviewMode && onOptionChange(index, key, !selectedAnswers.includes(key))}
                             style={{
-                                display: 'flex', 
-                                alignItems: 'flex-start', 
+                                display: 'flex',
+                                alignItems: 'flex-start',
                                 gap: 8,
                                 cursor: isReviewMode ? 'default' : 'pointer',
                                 padding: '4px 8px',
@@ -136,16 +123,16 @@ const Test = () => {
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-          e.preventDefault();
-          e.returnValue = ""; // Chrome requires returnValue to be set
+            e.preventDefault();
+            e.returnValue = ""; // Chrome requires returnValue to be set
         };
-    
+
         window.addEventListener("beforeunload", handleBeforeUnload);
-    
+
         return () => {
-          window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-      }, []);
+    }, []);
 
     useEffect(() => {
         const loadQuestions = async () => {
@@ -269,14 +256,14 @@ const Test = () => {
 
     const handleExit = () => {
         if (isSubmitted) {
-            navigate('/test', { replace: true });
+            navigate('/test', {replace: true});
         } else {
             setIsExitConfirmVisible(true);
         }
     };
 
     const handleConfirmExit = () => {
-        navigate('/test', { replace: true });
+        navigate('/test', {replace: true});
     };
 
     const handleQuestionClick = (index: number) => {
@@ -297,17 +284,17 @@ const Test = () => {
 
     const getQuestionButtonStyle = (index: number) => {
         const isAnswered = answers[index] !== undefined;
-        const isCorrect = isSubmitted && isAnswered && 
-            (Array.isArray(answers[index]) 
+        const isCorrect = isSubmitted && isAnswered &&
+            (Array.isArray(answers[index])
                 ? new Set(answers[index]).size === new Set(questions[index].answer.split(',').map(a => a.trim())).size &&
-                    new Set(answers[index]).size === new Set([...answers[index], ...questions[index].answer.split(',').map(a => a.trim())]).size
+                new Set(answers[index]).size === new Set([...answers[index], ...questions[index].answer.split(',').map(a => a.trim())]).size
                 : answers[index] === questions[index].answer);
 
         return {
             width: '100%',
-            backgroundColor: currentQuestionIndex === index 
+            backgroundColor: currentQuestionIndex === index
                 ? '#1890ff'  // Blue for selected
-                : isAnswered 
+                : isAnswered
                     ? '#e6f7ff'  // Light blue for answered
                     : '#fff',    // White for unanswered
             color: isSubmitted
@@ -409,9 +396,9 @@ const Test = () => {
 
             {/* Right Panel - Current Question */}
             <div style={{
-                width: '75%', 
-                padding: '24px', 
-                display: 'flex', 
+                width: '75%',
+                padding: '24px',
+                display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: '#fff',
                 borderRadius: '8px',
@@ -472,10 +459,10 @@ const Test = () => {
                 okText="Yes"
                 cancelText="No"
                 okType="danger"
-                okButtonProps={{ danger: true }}
+                okButtonProps={{danger: true}}
             >
                 <Space>
-                    <ExclamationCircleOutlined style={{ color: '#faad14', fontSize: '24px' }} />
+                    <ExclamationCircleOutlined style={{color: '#faad14', fontSize: '24px'}}/>
                     <Text>Are you sure you want to exit? Your progress will be lost.</Text>
                 </Space>
             </Modal>
