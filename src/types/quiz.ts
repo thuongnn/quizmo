@@ -1,9 +1,9 @@
 export interface Question {
+    id: string;
     question: string;
-    options: {
-        [key: string]: string; // key: A, B, C, D... value: option text
-    };
-    answer: string; // comma-separated keys of correct options (e.g., "A,D")
+    options: string[];
+    answer: string;
+    explanation: string;
 }
 
 export interface QuizState {
@@ -11,4 +11,9 @@ export interface QuizState {
     currentIndex: number;
     score: number;
     userAnswers: string[];
+    incorrectQuestions: Question[]; // Track questions that were answered incorrectly
+    learnedQuestions: Question[];
+    currentTurn: number; // Track current turn number
+    questionsPerTurn: number; // Number of questions per turn
+    reviewQuestionsPerTurn: number; // Number of review questions per turn
 } 

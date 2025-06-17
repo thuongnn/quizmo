@@ -27,9 +27,9 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
     return (
         <Card
             hoverable
-            style={{ 
+            style={{
                 height: '230px',
-                display: 'flex', 
+                display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
             }}
@@ -54,10 +54,10 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
                 />
             </Space>
 
-            <div style={{ flex: 1 }}>
+            <div style={{flex: 1}}>
                 <Paragraph
-                    ellipsis={{ rows: 2 }}
-                    style={{ 
+                    ellipsis={{rows: 2}}
+                    style={{
                         marginBottom: 8,
                         fontSize: '18px',
                         fontWeight: 600,
@@ -69,7 +69,7 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
                 {course.description && (
                     <Paragraph
                         type="secondary"
-                        ellipsis={{ rows: 3 }}
+                        ellipsis={{rows: 3}}
                         style={{
                             height: '65px',
                             marginBottom: 0,
@@ -81,12 +81,12 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
                 )}
             </div>
 
-            <div style={{ 
+            <div style={{
                 marginTop: 'auto',
                 paddingTop: '16px',
                 borderTop: '1px solid #f0f0f0',
             }}>
-                <Space style={{ 
+                <Space style={{
                     width: '100%',
                     justifyContent: 'space-between',
                 }}>

@@ -16,6 +16,9 @@ const incorrectAudio = new Audio(incorrectSound);
 correctAudio.volume = 0.5;
 incorrectAudio.volume = 0.5;
 
+export const QUESTIONS_PER_TURN = 8;
+export const REVIEW_QUESTIONS_PER_TURN = 4;
+
 export const useQuiz = (courseId: string | null) => {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -25,6 +28,10 @@ export const useQuiz = (courseId: string | null) => {
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [userAnswers, setUserAnswers] = useState<string[]>([]);
     const [isMuted, setIsMuted] = useState(false);
+    const [incorrectQuestions, setIncorrectQuestions] = useState<Question[]>([]);
+    const [currentTurn, setCurrentTurn] = useState(1);
+    const [totalQuestions, setTotalQuestions] = useState<Question[]>([]);
+    const [learnedQuestions, setLearnedQuestions] = useState<Question[]>([]);
 
     useEffect(() => {
         if (!courseId) {
@@ -38,7 +45,7 @@ export const useQuiz = (courseId: string | null) => {
             return;
         }
 
-        setQuestions(loadedQuestions);
+        setTotalQuestions(loadedQuestions);
 
         // Load saved state if exists
         const savedState = getQuizState(courseId);
@@ -46,6 +53,9 @@ export const useQuiz = (courseId: string | null) => {
             setCurrentIndex(savedState.currentIndex);
             setScore(savedState.score);
             setUserAnswers(savedState.userAnswers);
+            setIncorrectQuestions(savedState.incorrectQuestions || []);
+            setCurrentTurn(savedState.currentTurn || 1);
+            setLearnedQuestions(savedState.learnedQuestions || []);
             if (savedState.currentIndex < loadedQuestions.length) {
                 const savedAnswers = savedState.userAnswers[savedState.currentIndex]?.split(',') || [];
                 setSelectedAnswers(savedAnswers);
@@ -54,7 +64,35 @@ export const useQuiz = (courseId: string | null) => {
                 setIsCorrect(savedAnswers.sort().join(',') === correctAnswers.sort().join(','));
             }
         }
+
+        // Prepare questions for current turn
+        prepareQuestionsForTurn(loadedQuestions, savedState?.incorrectQuestions || []);
     }, [courseId]);
+
+    const prepareQuestionsForTurn = (allQuestions: Question[], previousIncorrectQuestions: Question[]) => {
+        let turnQuestions: Question[] = [];
+
+        // If we have previous incorrect questions and it's not the first turn
+        if (previousIncorrectQuestions.length > 0 && currentTurn > 1) {
+            // Randomly select review questions from previous incorrect questions
+            const shuffledIncorrect = [...previousIncorrectQuestions].sort(() => 0.5 - Math.random());
+            const reviewQuestions = shuffledIncorrect.slice(0, REVIEW_QUESTIONS_PER_TURN);
+            turnQuestions = [...reviewQuestions];
+        }
+
+        // Fill remaining slots with new questions
+        const remainingSlots = QUESTIONS_PER_TURN - turnQuestions.length;
+        const availableQuestions = allQuestions.filter(q =>
+            !turnQuestions.some(tq => tq.question === q.question) &&
+            !learnedQuestions.some(lq => lq.question === q.question)
+        );
+        const shuffledAvailable = [...availableQuestions].sort(() => 0.5 - Math.random());
+        turnQuestions = [...turnQuestions, ...shuffledAvailable.slice(0, remainingSlots)];
+
+        // Shuffle all questions for the turn
+        turnQuestions = turnQuestions.sort(() => 0.5 - Math.random());
+        setQuestions(turnQuestions);
+    };
 
     const playSound = (isCorrect: boolean) => {
         if (!isMuted) {
@@ -87,9 +125,32 @@ export const useQuiz = (courseId: string | null) => {
             setScore(prev => prev + 1);
             playSound(true);
             message.success('Correct!', 1);
+
+            // Add to learned questions if not already present
+            const currentQuestion = questions[currentIndex];
+            setLearnedQuestions(prev => {
+                if (!prev.some(q => q.question === currentQuestion.question)) {
+                    return [...prev, currentQuestion];
+                }
+                return prev;
+            });
+
+            // If this was a review question (from incorrectQuestions), remove it
+            const isReviewQuestion = incorrectQuestions.some(q => q.question === currentQuestion.question);
+            if (isReviewQuestion) {
+                setIncorrectQuestions(prev => prev.filter(q => q.question !== currentQuestion.question));
+                message.success('Great job! This question has been removed from review.', 2);
+            }
         } else {
             playSound(false);
             message.error('Incorrect!', 1);
+            // Add to incorrect questions if not already present
+            setIncorrectQuestions(prev => {
+                if (!prev.some(q => q.question === questions[currentIndex].question)) {
+                    return [...prev, questions[currentIndex]];
+                }
+                return prev;
+            });
         }
 
         setShowResult(true);
@@ -103,6 +164,11 @@ export const useQuiz = (courseId: string | null) => {
             currentIndex,
             score,
             userAnswers: newUserAnswers,
+            incorrectQuestions,
+            learnedQuestions,
+            currentTurn,
+            questionsPerTurn: QUESTIONS_PER_TURN,
+            reviewQuestionsPerTurn: REVIEW_QUESTIONS_PER_TURN
         });
     };
 
@@ -114,7 +180,19 @@ export const useQuiz = (courseId: string | null) => {
             setShowResult(false);
             setIsCorrect(null);
         } else {
-            message.success(`Quiz completed! Your score: ${score}/${questions.length}`);
+            // End of current turn
+            message.success(`Turn ${currentTurn} completed! Your score: ${score}/${questions.length}`);
+            setCurrentTurn(prev => prev + 1);
+            setCurrentIndex(0);
+            setScore(0);
+            setUserAnswers([]);
+            setSelectedAnswers([]);
+            setShowResult(false);
+            setIsCorrect(null);
+
+            // Prepare questions for next turn
+            const allQuestions = getQuestionsByCourseId(courseId!);
+            prepareQuestionsForTurn(allQuestions, incorrectQuestions);
         }
     };
 
@@ -125,7 +203,15 @@ export const useQuiz = (courseId: string | null) => {
         setIsCorrect(null);
         setScore(0);
         setUserAnswers([]);
+        setIncorrectQuestions([]);
+        setLearnedQuestions([]);
+        setCurrentTurn(1);
         resetQuizState(courseId!);
+
+        // Prepare questions for new turn
+        const allQuestions = getQuestionsByCourseId(courseId!);
+        prepareQuestionsForTurn(allQuestions, []);
+
         message.success('Quiz has been reset');
     };
 
@@ -158,5 +244,9 @@ export const useQuiz = (courseId: string | null) => {
         handleNext,
         handleReset,
         handleOptionChange,
+        currentTurn,
+        incorrectQuestions,
+        totalQuestions,
+        learnedQuestions,
     };
 }; 

@@ -1,7 +1,15 @@
-import {Button, Card, Checkbox, Progress, Radio, Space, Typography} from 'antd';
-import {CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SoundOutlined} from '@ant-design/icons';
+import {Button, Card, Checkbox, Modal, Progress, Radio, Space, Tag, Typography} from 'antd';
+import {
+    CheckCircleOutlined,
+    CloseCircleOutlined,
+    ReloadOutlined,
+    SoundOutlined,
+    WarningOutlined
+} from '@ant-design/icons';
 import {useSearchParams} from 'react-router-dom';
-import {useQuiz} from '../hooks/useQuiz';
+import {QUESTIONS_PER_TURN, useQuiz} from '../hooks/useQuiz';
+import {getCourseById} from '../services/courseService';
+import {useState} from 'react';
 
 // Import sound files
 import correctSound from '../assets/sounds/correct.mp3';
@@ -12,6 +20,8 @@ const {Title, Text} = Typography;
 const QuizPage = () => {
     const [searchParams] = useSearchParams();
     const courseId = searchParams.get('courseId');
+    const course = courseId ? getCourseById(courseId) : null;
+    const [isResetModalVisible, setIsResetModalVisible] = useState(false);
 
     const {
         questions,
@@ -24,6 +34,9 @@ const QuizPage = () => {
         handleNext,
         handleReset,
         handleOptionChange,
+        incorrectQuestions,
+        totalQuestions,
+        learnedQuestions,
     } = useQuiz(courseId);
 
     // Create audio objects
@@ -37,6 +50,7 @@ const QuizPage = () => {
     const currentQuestion = questions[currentIndex];
     const correctAnswers = currentQuestion?.answer.split(',') || [];
     const isMultipleAnswer = correctAnswers.length > 1;
+    const isReviewQuestion = incorrectQuestions.some(q => q.question === currentQuestion.question);
 
     const getOptionStyle = (key: string) => {
         const baseStyle = {
@@ -125,6 +139,19 @@ const QuizPage = () => {
         flexShrink: 0,
     });
 
+    const showResetModal = () => {
+        setIsResetModalVisible(true);
+    };
+
+    const handleResetConfirm = () => {
+        handleReset();
+        setIsResetModalVisible(false);
+    };
+
+    if (!courseId || !course) {
+        return <div>Course not found</div>;
+    }
+
     if (questions.length === 0) {
         return (
             <Card style={{margin: '24px auto', textAlign: 'center'}}>
@@ -136,12 +163,17 @@ const QuizPage = () => {
 
     return (
         <div>
+            <div style={{marginBottom: 24}}>
+                <Text style={{fontSize: 24, fontWeight: 500}}>{course.name}</Text>
+            </div>
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16}}>
                 <Progress
+                    steps={{count: QUESTIONS_PER_TURN, gap: 4}}
                     percent={Math.round(((currentIndex + 1) / questions.length) * 100)}
+                    format={() => `${currentIndex + 1} / ${questions.length}`}
                     status="active"
-                    style={{flex: 1, marginRight: 16}}
-                    strokeWidth={8}
+                    style={{flex: 1, marginRight: 16, width: "100%"}}
+                    strokeWidth={10}
                 />
                 <Space>
                     <Button
@@ -153,7 +185,7 @@ const QuizPage = () => {
                     </Button>
                     <Button
                         icon={<ReloadOutlined/>}
-                        onClick={handleReset}
+                        onClick={showResetModal}
                         danger
                         size="middle"
                     >
@@ -162,7 +194,6 @@ const QuizPage = () => {
                 </Space>
             </div>
 
-            <Title level={4} style={{marginBottom: 16}}>Question {currentIndex + 1} of {questions.length}</Title>
             <div
                 style={{
                     fontSize: 15,
@@ -174,8 +205,27 @@ const QuizPage = () => {
                     backgroundColor: '#fafafa',
                     borderRadius: 6,
                     border: '1px solid #f0f0f0',
+                    position: 'relative',
                 }}
             >
+                {isReviewQuestion && (
+                    <Tag
+                        color="warning"
+                        style={{
+                            position: 'absolute',
+                            top: -12,
+                            right: 16,
+                            padding: '4px 8px',
+                            borderRadius: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                        }}
+                    >
+                        <WarningOutlined/>
+                        Review Question
+                    </Tag>
+                )}
                 {currentQuestion.question}
             </div>
 
@@ -203,9 +253,9 @@ const QuizPage = () => {
                                 />
                             )}
                             <div style={getOptionTextStyle(key)}>
-                <span style={getOptionKeyStyle(key)}>
-                  {key}.
-                </span>
+                                <span style={getOptionKeyStyle(key)}>
+                                    {key}.
+                                </span>
                                 {text}
                             </div>
                             {showResult && correctAnswers.includes(key) && (
@@ -237,10 +287,66 @@ const QuizPage = () => {
                         size="middle"
                         style={{minWidth: 100}}
                     >
-                        {currentIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+                        {currentIndex < questions.length - 1 ? 'Next Question' : 'Next Turn'}
                     </Button>
                 )}
             </div>
+
+            <Modal
+                open={currentIndex === questions.length - 1 && showResult}
+                onOk={handleNext}
+                onCancel={handleNext}
+                footer={null}
+                width={400}
+            >
+                <Space direction="vertical" style={{width: '100%'}} size="large">
+                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px'}}>
+                        <div>
+                            <Progress
+                                type="circle"
+                                percent={Math.round((learnedQuestions.length / totalQuestions.length) * 100)}
+                                status="active"
+                                strokeColor="#1890ff"
+                                strokeWidth={12}
+                                width={200}
+                                format={() => (
+                                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                        <div style={{fontSize: '36px', color: '#1890ff', fontWeight: 500}}>
+                                            {learnedQuestions.length}/ {totalQuestions.length}
+                                        </div>
+                                        <div style={{fontSize: '14px', color: '#8c8c8c', marginTop: '2px'}}>
+                                            Learned Questions
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        </div>
+
+                        {incorrectQuestions.length > 0 && (
+                            <div style={{textAlign: 'center'}}>
+                                <span style={{color: '#8c8c8c'}}>Questions to Review: </span>
+                                <span style={{color: '#ff4d4f', fontWeight: 500}}>
+                                    {incorrectQuestions.length}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </Space>
+            </Modal>
+
+            {/* Reset Confirmation Modal */}
+            <Modal
+                title="Reset Quiz"
+                open={isResetModalVisible}
+                onOk={handleResetConfirm}
+                onCancel={() => setIsResetModalVisible(false)}
+                okText="Reset"
+                cancelText="Cancel"
+                okButtonProps={{danger: true}}
+            >
+                <p>Are you sure you want to reset the quiz? This will clear all your progress and start from the
+                    beginning.</p>
+            </Modal>
         </div>
     );
 };

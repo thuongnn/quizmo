@@ -1,38 +1,39 @@
 # Quizmo - Interactive Quiz Learning Platform
 
-Quizmo is a modern web application designed to help users learn and practice through interactive quizzes. Built with React and TypeScript, it provides a clean and intuitive interface for managing courses and taking quizzes.
+Quizmo is a modern web application designed to help users learn and practice through interactive quizzes. Built with
+React and TypeScript, it provides a clean and intuitive interface for managing courses and taking quizzes.
 
 ## Features
 
 - **Course Management**
-  - Create and manage multiple courses
-  - Upload questions in various formats
-  - Organize questions by categories
-  - Delete courses when needed
+    - Create and manage multiple courses
+    - Upload questions in various formats
+    - Organize questions by categories
+    - Delete courses when needed
 
 - **Interactive Quiz System**
-  - Multiple choice questions support
-  - Single and multiple answer options
-  - Real-time answer validation
-  - Progress tracking
-  - Sound effects for correct/incorrect answers
-  - Mute/unmute functionality
+    - Multiple choice questions support
+    - Single and multiple answer options
+    - Real-time answer validation
+    - Progress tracking
+    - Sound effects for correct/incorrect answers
+    - Mute/unmute functionality
 
 - **Practice Test Mode**
-  - Timed test sessions
-  - Random question selection
-  - Score calculation
-  - Detailed results review
-  - Pass/Fail status
+    - Timed test sessions
+    - Random question selection
+    - Score calculation
+    - Detailed results review
+    - Pass/Fail status
 
 ## Tech Stack
 
 - **Frontend**
-  - React 18
-  - TypeScript
-  - Ant Design (UI Components)
-  - React Router (Navigation)
-  - Local Storage (State Management)
+    - React 18
+    - TypeScript
+    - Ant Design (UI Components)
+    - React Router (Navigation)
+    - Local Storage (State Management)
 
 ## Getting Started
 
@@ -44,12 +45,14 @@ Quizmo is a modern web application designed to help users learn and practice thr
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/quizmo.git
 cd quizmo
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 # or
@@ -57,6 +60,7 @@ yarn install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 # or
@@ -90,22 +94,22 @@ quizmo/
 ## Usage
 
 1. **Creating a Course**
-   - Navigate to "My Courses"
-   - Click "Add Course"
-   - Enter course details and questions
-   - Save the course
+    - Navigate to "My Courses"
+    - Click "Add Course"
+    - Enter course details and questions
+    - Save the course
 
 2. **Taking a Quiz**
-   - Select a course from "My Courses"
-   - Click "Learn" to start the quiz
-   - Answer questions and get immediate feedback
-   - Review your progress
+    - Select a course from "My Courses"
+    - Click "Learn" to start the quiz
+    - Answer questions and get immediate feedback
+    - Review your progress
 
 3. **Practice Test**
-   - Go to "Practice Test"
-   - Select a course
-   - Complete the test within the time limit
-   - View your results
+    - Go to "Practice Test"
+    - Select a course
+    - Complete the test within the time limit
+    - View your results
 
 ## Contributing
 

@@ -1,5 +1,5 @@
 import {Layout, Menu, theme} from 'antd';
-import {FileTextOutlined, QuestionCircleOutlined, GithubOutlined} from '@ant-design/icons';
+import {FileTextOutlined, GithubOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {useEffect, useState} from 'react';
 
@@ -89,11 +89,11 @@ export const MainLayout = ({children}: MainLayoutProps) => {
             }}>
                 <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'}}>
                     <span>© {new Date().getFullYear()} Quizmo - Developed by</span>
-                    <a 
-                        href="https://github.com/thuongnn" 
-                        target="_blank" 
+                    <a
+                        href="https://github.com/thuongnn"
+                        target="_blank"
                         rel="noopener noreferrer"
-                        style={{ 
+                        style={{
                             color: '#1890ff',
                             display: 'flex',
                             alignItems: 'center',
@@ -101,7 +101,7 @@ export const MainLayout = ({children}: MainLayoutProps) => {
                         }}
                     >
                         thuongnn
-                        <GithubOutlined />
+                        <GithubOutlined/>
                     </a>
                 </div>
             </Footer>
