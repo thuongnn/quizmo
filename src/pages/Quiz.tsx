@@ -248,7 +248,7 @@ const QuizPage = () => {
                             Review Question
                         </Tag>
                     )}
-                    {currentQuestion.question}
+                    <div dangerouslySetInnerHTML={{__html: currentQuestion.question}}/>
                 </div>
 
                 <Space direction="vertical" style={{width: '100%', gap: '8px'}}>
@@ -274,12 +274,10 @@ const QuizPage = () => {
                                         style={{marginTop: 2}}
                                     />
                                 )}
-                                <div style={getOptionTextStyle(key)}>
-                                    <span style={getOptionKeyStyle(key)}>
-                                        {key}.
-                                    </span>
-                                    {text}
-                                </div>
+                                <Text style={getOptionTextStyle(key)}>
+                                    <Text strong style={getOptionKeyStyle(key)}>{key}.</Text>
+                                    <span dangerouslySetInnerHTML={{__html: text}}/>
+                                </Text>
                                 {showResult && correctAnswers.includes(key) && (
                                     <CheckCircleOutlined style={getIconStyle(true)}/>
                                 )}

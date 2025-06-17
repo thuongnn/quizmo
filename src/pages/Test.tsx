@@ -43,16 +43,18 @@ const QuestionCard = ({
     };
 
     const getOptionStyle = (key: string) => {
-        if (!isReviewMode) return {};
+        const styles = {marginRight: 8};
+
+        if (!isReviewMode) return styles;
 
         if (isOptionCorrect(key) && isOptionSelected(key)) {
-            return {color: '#52c41a'}; // Green for correct selected
+            return {...styles, color: '#52c41a'}; // Green for correct selected
         }
         if (isOptionCorrect(key) && !isOptionSelected(key)) {
-            return {color: '#52c41a'}; // Green for correct not selected
+            return {...styles, color: '#52c41a'}; // Green for correct not selected
         }
         if (!isOptionCorrect(key) && isOptionSelected(key)) {
-            return {color: '#ff4d4f'}; // Red for incorrect selected
+            return {...styles, color: '#ff4d4f'}; // Red for incorrect selected
         }
         return {};
     };
@@ -61,7 +63,7 @@ const QuestionCard = ({
         <Card size="small">
             <Space direction="vertical" style={{width: '100%'}} size={8}>
                 <Text strong>Question {index + 1}:</Text>
-                <Text style={{whiteSpace: 'pre-line'}}>{question.question}</Text>
+                <div dangerouslySetInnerHTML={{__html: question.question}} style={{whiteSpace: 'pre-line'}}/>
                 <Space direction="vertical" style={{width: '100%'}}>
                     {Object.entries(question.options).map(([key, value]) => (
                         <div
@@ -94,7 +96,8 @@ const QuestionCard = ({
                                 />
                             )}
                             <Text style={getOptionStyle(key)}>
-                                <Text strong style={getOptionStyle(key)}>{key}.</Text> {value}
+                                <Text strong style={getOptionStyle(key)}>{key}.</Text>
+                                <span dangerouslySetInnerHTML={{__html: value}}/>
                             </Text>
                         </div>
                     ))}

@@ -1,7 +1,7 @@
 export interface Question {
     id: string;
     question: string;
-    options: string[];
+    options: Record<string, string>;
     answer: string;
     explanation: string;
 }
