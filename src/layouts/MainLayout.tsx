@@ -1,9 +1,9 @@
 import {Layout, Menu, theme} from 'antd';
-import {FileTextOutlined, QuestionCircleOutlined} from '@ant-design/icons';
+import {FileTextOutlined, QuestionCircleOutlined, GithubOutlined} from '@ant-design/icons';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {useEffect, useState} from 'react';
 
-const {Header, Content} = Layout;
+const {Header, Content, Footer} = Layout;
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -77,9 +77,34 @@ export const MainLayout = ({children}: MainLayoutProps) => {
                 padding: 24,
                 background: colorBgContainer,
                 borderRadius: 8,
+                flex: 1,
             }}>
                 {children}
             </Content>
+            <Footer style={{
+                textAlign: 'center',
+                background: colorBgContainer,
+                padding: '16px 50px',
+                borderTop: '1px solid #f0f0f0',
+            }}>
+                <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'}}>
+                    <span>© {new Date().getFullYear()} Quizmo - Developed by</span>
+                    <a 
+                        href="https://github.com/thuongnn" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                            color: '#1890ff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                        }}
+                    >
+                        thuongnn
+                        <GithubOutlined />
+                    </a>
+                </div>
+            </Footer>
         </Layout>
     );
 }; 

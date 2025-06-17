@@ -12,7 +12,7 @@ const TestList = () => {
     };
 
     return (
-        <Card style={{margin: '24px'}}>
+        <div>
             <Space direction="vertical" style={{width: '100%'}} size={16}>
                 <Title level={3}>Available Tests</Title>
                 <Text type="secondary">
@@ -55,7 +55,7 @@ const TestList = () => {
                     ))}
                 </Row>
             </Space>
-        </Card>
+        </div>
     );
 };
 

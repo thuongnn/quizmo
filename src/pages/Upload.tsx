@@ -80,7 +80,7 @@ const UploadPage = () => {
     };
 
     return (
-        <Card style={{margin: '24px'}}>
+        <div>
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
                 <Title level={3} style={{margin: 0}}>My Courses</Title>
                 <Button
@@ -168,7 +168,7 @@ const UploadPage = () => {
                     </Form.Item>
                 </Form>
             </Modal>
-        </Card>
+        </div>
     );
 };
 
