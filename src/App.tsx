@@ -11,12 +11,12 @@ function App() {
         <>
             <Routes>
                 <Route path="/test/exam" element={<Test/>}/>
+                <Route path="/quiz" element={<QuizPage/>}/>
                 <Route path="/*" element={
                     <MainLayout>
                         <Routes>
                             <Route path="/" element={<UploadPage/>}/>
                             <Route path="/upload" element={<UploadPage/>}/>
-                            <Route path="/quiz" element={<QuizPage/>}/>
                             <Route path="/test" element={<TestList/>}/>
                         </Routes>
                     </MainLayout>
