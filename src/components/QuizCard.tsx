@@ -1,10 +1,9 @@
 import {Button, Card, Modal, Space, Typography} from 'antd';
 import {BookOutlined, DeleteOutlined, ExclamationCircleOutlined} from '@ant-design/icons';
 import type {Course} from '../types/course';
-import {useNavigate} from 'react-router-dom';
 import {useState} from 'react';
 
-const {Title, Text} = Typography;
+const {Text, Paragraph} = Typography;
 
 interface QuizCardProps {
     course: Course;
@@ -13,7 +12,6 @@ interface QuizCardProps {
 }
 
 export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
-    const navigate = useNavigate();
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const showDeleteModal = (e: React.MouseEvent) => {
@@ -29,7 +27,18 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
     return (
         <Card
             hoverable
-            style={{height: '100%', display: 'flex', flexDirection: 'column', position: 'relative'}}
+            style={{ 
+                height: '230px',
+                display: 'flex', 
+                flexDirection: 'column',
+                position: 'relative',
+            }}
+            bodyStyle={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                padding: '16px',
+            }}
         >
             <Space style={{
                 position: 'absolute',
@@ -45,20 +54,39 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
                 />
             </Space>
 
-            <Title level={4} style={{marginBottom: 8}}>{course.name}</Title>
-            {course.description && (
-                <Text type="secondary" style={{marginBottom: 16, display: 'block'}}>
-                    {course.description}
-                </Text>
-            )}
+            <div style={{ flex: 1 }}>
+                <Paragraph
+                    ellipsis={{ rows: 2 }}
+                    style={{ 
+                        marginBottom: 8,
+                        fontSize: '18px',
+                        fontWeight: 600,
+                        lineHeight: '1.4',
+                    }}
+                >
+                    {course.name}
+                </Paragraph>
+                {course.description && (
+                    <Paragraph
+                        type="secondary"
+                        ellipsis={{ rows: 3 }}
+                        style={{
+                            height: '65px',
+                            marginBottom: 0,
+                            lineHeight: '1.4',
+                        }}
+                    >
+                        {course.description}
+                    </Paragraph>
+                )}
+            </div>
 
-            <Space direction="vertical" style={{
+            <div style={{ 
                 marginTop: 'auto',
-                width: '100%',
+                paddingTop: '16px',
+                borderTop: '1px solid #f0f0f0',
             }}>
-                <Space style={{
-                    padding: '8px 0',
-                    borderTop: '1px solid #f0f0f0',
+                <Space style={{ 
                     width: '100%',
                     justifyContent: 'space-between',
                 }}>
@@ -77,7 +105,7 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
                         Learn
                     </Button>
                 </Space>
-            </Space>
+            </div>
 
             <Modal
                 title="Delete Course"

@@ -1,8 +1,8 @@
 import {Button, Card, Col, Row, Space, Typography} from 'antd';
-import {FileTextOutlined} from '@ant-design/icons';
+import {BookOutlined} from '@ant-design/icons';
 import {getCourses} from '../services/courseService';
 
-const {Title, Text} = Typography;
+const {Title, Text, Paragraph} = Typography;
 
 const TestList = () => {
     const courses = getCourses();
@@ -25,31 +25,69 @@ const TestList = () => {
                         <Col xs={24} sm={12} md={8} lg={6} key={course.id}>
                             <Card
                                 hoverable
-                                style={{height: '100%', display: 'flex', flexDirection: 'column'}}
+                                style={{
+                                    height: '230px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    position: 'relative',
+                                }}
+                                bodyStyle={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    height: '100%',
+                                    padding: '16px',
+                                }}
                             >
-                                <Space direction="vertical" style={{width: '100%'}} size={8}>
-                                    <Title level={4} style={{margin: 0}}>{course.name}</Title>
+                                <div style={{flex: 1}}>
+                                    <Paragraph
+                                        ellipsis={{rows: 2}}
+                                        style={{
+                                            marginBottom: 8,
+                                            fontSize: '18px',
+                                            fontWeight: 600,
+                                            lineHeight: '1.4',
+                                        }}
+                                    >
+                                        {course.name}
+                                    </Paragraph>
                                     {course.description && (
-                                        <Text type="secondary" style={{marginBottom: 16, display: 'block'}}>
+                                        <Paragraph
+                                            type="secondary"
+                                            ellipsis={{rows: 3}}
+                                            style={{
+                                                height: '65px',
+                                                marginBottom: 0,
+                                                lineHeight: '1.4',
+                                            }}
+                                        >
                                             {course.description}
-                                        </Text>
+                                        </Paragraph>
                                     )}
-                                    <div style={{marginTop: 'auto'}}>
-                                        <Space style={{justifyContent: 'space-between', width: '100%'}}>
-                                            <Text type="secondary">
-                                                {course.questions.length} questions available
-                                            </Text>
-                                            <Button
-                                                type="primary"
-                                                icon={<FileTextOutlined/>}
-                                                onClick={() => handleStartTest(course.id)}
-                                                disabled={course.questions.length < 65}
-                                            >
-                                                Start Test
-                                            </Button>
+                                </div>
+
+                                <div style={{
+                                    marginTop: 'auto',
+                                    paddingTop: '16px',
+                                    borderTop: '1px solid #f0f0f0',
+                                }}>
+                                    <Space style={{
+                                        width: '100%',
+                                        justifyContent: 'space-between',
+                                    }}>
+                                        <Space>
+                                            <Text type="secondary">Questions:</Text>
+                                            <Text strong style={{color: '#1890ff'}}>{course.questions.length}</Text>
                                         </Space>
-                                    </div>
-                                </Space>
+                                        <Button
+                                            type="primary"
+                                            icon={<BookOutlined/>}
+                                            onClick={() => handleStartTest(course.id)}
+                                            disabled={course.questions.length < 65}
+                                        >
+                                            Start Test
+                                        </Button>
+                                    </Space>
+                                </div>
                             </Card>
                         </Col>
                     ))}
