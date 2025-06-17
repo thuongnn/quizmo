@@ -4,9 +4,10 @@ import {
     CloseCircleOutlined,
     ReloadOutlined,
     SoundOutlined,
-    WarningOutlined
+    WarningOutlined,
+    CloseOutlined
 } from '@ant-design/icons';
-import {useSearchParams} from 'react-router-dom';
+import {useSearchParams, useNavigate} from 'react-router-dom';
 import {QUESTIONS_PER_TURN, useQuiz} from '../hooks/useQuiz';
 import {getCourseById} from '../services/courseService';
 import {useState} from 'react';
@@ -19,6 +20,7 @@ const {Title, Text} = Typography;
 
 const QuizPage = () => {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const courseId = searchParams.get('courseId');
     const course = courseId ? getCourseById(courseId) : null;
     const [isResetModalVisible, setIsResetModalVisible] = useState(false);
@@ -162,191 +164,225 @@ const QuizPage = () => {
     }
 
     return (
-        <div>
-            <div style={{marginBottom: 24}}>
-                <Text style={{fontSize: 24, fontWeight: 500}}>{course.name}</Text>
-            </div>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16}}>
-                <Progress
-                    steps={{count: QUESTIONS_PER_TURN, gap: 4}}
-                    percent={Math.round(((currentIndex + 1) / questions.length) * 100)}
-                    format={() => `${currentIndex + 1} / ${questions.length}`}
-                    status="active"
-                    style={{flex: 1, marginRight: 16, width: "100%"}}
-                    strokeWidth={10}
+        <div style={{minHeight: '100vh', display: 'flex', padding: '24px', backgroundColor: '#f0f2f5'}}>
+            <div style={{
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: '#fff',
+                borderRadius: '8px',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                position: 'relative',
+                width: '100%'
+            }}>
+                <Button
+                    type="text"
+                    icon={<CloseOutlined />}
+                    onClick={() => navigate('/')}
+                    style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '16px',
+                        fontSize: '16px'
+                    }}
                 />
-                <Space>
-                    <Button
-                        icon={<SoundOutlined/>}
-                        onClick={() => setIsMuted(!isMuted)}
-                        type={isMuted ? 'default' : 'primary'}
-                    >
-                        {isMuted ? 'Unmute' : 'Mute'}
-                    </Button>
-                    <Button
-                        icon={<ReloadOutlined/>}
-                        onClick={showResetModal}
-                        danger
-                        size="middle"
-                    >
-                        Reset Quiz
-                    </Button>
-                </Space>
-            </div>
+                <div style={{marginBottom: 24}}>
+                    <Text style={{fontSize: 24, fontWeight: 500}}>{course.name}</Text>
+                </div>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16}}>
+                    <Progress
+                        steps={{count: QUESTIONS_PER_TURN, gap: 4}}
+                        percent={Math.round(((currentIndex + 1) / questions.length) * 100)}
+                        format={() => `${currentIndex + 1} / ${questions.length}`}
+                        status="active"
+                        style={{flex: 1, marginRight: 16, width: "100%"}}
+                        strokeWidth={10}
+                    />
+                    <Space>
+                        <Button
+                            icon={<SoundOutlined/>}
+                            onClick={() => setIsMuted(!isMuted)}
+                            type={isMuted ? 'default' : 'primary'}
+                        >
+                            {isMuted ? 'Unmute' : 'Mute'}
+                        </Button>
+                        <Button
+                            icon={<ReloadOutlined/>}
+                            onClick={showResetModal}
+                            size="middle"
+                        >
+                            Reset Quiz
+                        </Button>
+                    </Space>
+                </div>
 
-            <div
-                style={{
-                    fontSize: 15,
-                    marginBottom: 20,
-                    whiteSpace: 'pre-line',
-                    textAlign: 'left',
-                    lineHeight: 1.5,
-                    padding: '12px 16px',
-                    backgroundColor: '#fafafa',
-                    borderRadius: 6,
-                    border: '1px solid #f0f0f0',
-                    position: 'relative',
-                }}
-            >
-                {isReviewQuestion && (
-                    <Tag
-                        color="warning"
-                        style={{
-                            position: 'absolute',
-                            top: -12,
-                            right: 16,
-                            padding: '4px 8px',
-                            borderRadius: 4,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                        }}
-                    >
-                        <WarningOutlined/>
-                        Review Question
-                    </Tag>
-                )}
-                {currentQuestion.question}
-            </div>
+                <div
+                    style={{
+                        fontSize: 15,
+                        marginBottom: 20,
+                        whiteSpace: 'pre-line',
+                        textAlign: 'left',
+                        lineHeight: 1.5,
+                        padding: '12px 16px',
+                        backgroundColor: '#fafafa',
+                        borderRadius: 6,
+                        border: '1px solid #f0f0f0',
+                        position: 'relative',
+                    }}
+                >
+                    {isReviewQuestion && (
+                        <Tag
+                            color="warning"
+                            style={{
+                                position: 'absolute',
+                                top: -12,
+                                right: 16,
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                            }}
+                        >
+                            <WarningOutlined/>
+                            Review Question
+                        </Tag>
+                    )}
+                    {currentQuestion.question}
+                </div>
 
-            <Space direction="vertical" style={{width: '100%', gap: '8px'}}>
-                {Object.entries(currentQuestion?.options || {}).map(([key, text]) => (
-                    <div
-                        key={key}
-                        style={getOptionStyle(key)}
-                        onClick={() => !showResult && handleOptionChange(key, !selectedAnswers.includes(key))}
-                    >
-                        <div style={getOptionContentStyle(key)}>
-                            {isMultipleAnswer ? (
-                                <Checkbox
-                                    checked={selectedAnswers.includes(key)}
-                                    onChange={(e) => !showResult && handleOptionChange(key, e.target.checked)}
-                                    disabled={showResult}
-                                    style={{marginTop: 2}}
-                                />
-                            ) : (
-                                <Radio
-                                    checked={selectedAnswers.includes(key)}
-                                    onChange={() => !showResult && handleOptionChange(key, true)}
-                                    disabled={showResult}
-                                    style={{marginTop: 2}}
-                                />
-                            )}
-                            <div style={getOptionTextStyle(key)}>
-                                <span style={getOptionKeyStyle(key)}>
-                                    {key}.
-                                </span>
-                                {text}
-                            </div>
-                            {showResult && correctAnswers.includes(key) && (
-                                <CheckCircleOutlined style={getIconStyle(true)}/>
-                            )}
-                            {showResult && selectedAnswers.includes(key) && !correctAnswers.includes(key) && (
-                                <CloseCircleOutlined style={getIconStyle(false)}/>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </Space>
-
-            <div style={{marginTop: 20, textAlign: 'center'}}>
-                {!showResult ? (
-                    <Button
-                        type="primary"
-                        onClick={handleAnswer}
-                        disabled={selectedAnswers.length === 0}
-                        size="middle"
-                        style={{minWidth: 100}}
-                    >
-                        Check Answer
-                    </Button>
-                ) : (
-                    <Button
-                        type="primary"
-                        onClick={handleNext}
-                        size="middle"
-                        style={{minWidth: 100}}
-                    >
-                        {currentIndex < questions.length - 1 ? 'Next Question' : 'Next Turn'}
-                    </Button>
-                )}
-            </div>
-
-            <Modal
-                open={currentIndex === questions.length - 1 && showResult}
-                onOk={handleNext}
-                onCancel={handleNext}
-                footer={null}
-                width={400}
-            >
-                <Space direction="vertical" style={{width: '100%'}} size="large">
-                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px'}}>
-                        <div>
-                            <Progress
-                                type="circle"
-                                percent={Math.round((learnedQuestions.length / totalQuestions.length) * 100)}
-                                status="active"
-                                strokeColor="#1890ff"
-                                strokeWidth={12}
-                                width={200}
-                                format={() => (
-                                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                                        <div style={{fontSize: '36px', color: '#1890ff', fontWeight: 500}}>
-                                            {learnedQuestions.length}/ {totalQuestions.length}
-                                        </div>
-                                        <div style={{fontSize: '14px', color: '#8c8c8c', marginTop: '2px'}}>
-                                            Learned Questions
-                                        </div>
-                                    </div>
+                <Space direction="vertical" style={{width: '100%', gap: '8px'}}>
+                    {Object.entries(currentQuestion?.options || {}).map(([key, text]) => (
+                        <div
+                            key={key}
+                            style={getOptionStyle(key)}
+                            onClick={() => !showResult && handleOptionChange(key, !selectedAnswers.includes(key))}
+                        >
+                            <div style={getOptionContentStyle(key)}>
+                                {isMultipleAnswer ? (
+                                    <Checkbox
+                                        checked={selectedAnswers.includes(key)}
+                                        onChange={(e) => !showResult && handleOptionChange(key, e.target.checked)}
+                                        disabled={showResult}
+                                        style={{marginTop: 2}}
+                                    />
+                                ) : (
+                                    <Radio
+                                        checked={selectedAnswers.includes(key)}
+                                        onChange={() => !showResult && handleOptionChange(key, true)}
+                                        disabled={showResult}
+                                        style={{marginTop: 2}}
+                                    />
                                 )}
-                            />
-                        </div>
-
-                        {incorrectQuestions.length > 0 && (
-                            <div style={{textAlign: 'center'}}>
-                                <span style={{color: '#8c8c8c'}}>Questions to Review: </span>
-                                <span style={{color: '#ff4d4f', fontWeight: 500}}>
-                                    {incorrectQuestions.length}
-                                </span>
+                                <div style={getOptionTextStyle(key)}>
+                                    <span style={getOptionKeyStyle(key)}>
+                                        {key}.
+                                    </span>
+                                    {text}
+                                </div>
+                                {showResult && correctAnswers.includes(key) && (
+                                    <CheckCircleOutlined style={getIconStyle(true)}/>
+                                )}
+                                {showResult && selectedAnswers.includes(key) && !correctAnswers.includes(key) && (
+                                    <CloseCircleOutlined style={getIconStyle(false)}/>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    ))}
                 </Space>
-            </Modal>
 
-            {/* Reset Confirmation Modal */}
-            <Modal
-                title="Reset Quiz"
-                open={isResetModalVisible}
-                onOk={handleResetConfirm}
-                onCancel={() => setIsResetModalVisible(false)}
-                okText="Reset"
-                cancelText="Cancel"
-                okButtonProps={{danger: true}}
-            >
-                <p>Are you sure you want to reset the quiz? This will clear all your progress and start from the
-                    beginning.</p>
-            </Modal>
+                <div style={{marginTop: 20, textAlign: 'center'}}>
+                    {!showResult ? (
+                        <Button
+                            type="primary"
+                            onClick={handleAnswer}
+                            disabled={selectedAnswers.length === 0}
+                            size="middle"
+                            style={{minWidth: 100}}
+                        >
+                            Check Answer
+                        </Button>
+                    ) : (
+                        <Button
+                            type="primary"
+                            onClick={handleNext}
+                            size="middle"
+                            style={{minWidth: 100}}
+                        >
+                            {currentIndex < questions.length - 1 ? 'Next Question' : 'Next Turn'}
+                        </Button>
+                    )}
+                </div>
+
+                <Modal
+                    title="Are you ready to continue?"
+                    open={currentIndex === questions.length - 1 && showResult}
+                    onOk={handleNext}
+                    onCancel={handleNext}
+                    footer={[
+                        <Button 
+                            key="continue" 
+                            type="primary" 
+                            size="large"
+                            onClick={handleNext}
+                        >
+                            Continue
+                        </Button>
+                    ]}
+                    width={450}
+                    closable={false}
+                >
+                    <Space direction="vertical" style={{width: '100%'}} size="large">
+                        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px'}}>
+                            <div style={{width: '100%'}}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                    <span style={{color: '#8c8c8c'}}>Overall Progress</span>
+                                    <span style={{color: '#8c8c8c'}}>{totalQuestions.length} questions</span>
+                                </div>
+                                <Progress 
+                                    percent={Math.round((learnedQuestions.length / totalQuestions.length) * 100)}
+                                    status="active"
+                                    strokeColor="#1890ff"
+                                    strokeWidth={12}
+                                />
+                            </div>
+
+                            <div style={{display: 'flex', gap: '16px', width: '100%'}}>
+                                <Card style={{flex: 1, textAlign: 'center'}}>
+                                    <div style={{fontSize: '24px', color: '#1890ff', fontWeight: 500}}>
+                                        {learnedQuestions.length}
+                                    </div>
+                                    <div style={{fontSize: '14px', color: '#8c8c8c', marginTop: '4px'}}>
+                                        Learned Questions
+                                    </div>
+                                </Card>
+                                <Card style={{flex: 1, textAlign: 'center'}}>
+                                    <div style={{fontSize: '24px', color: '#ff4d4f', fontWeight: 500}}>
+                                        {incorrectQuestions.length}
+                                    </div>
+                                    <div style={{fontSize: '14px', color: '#8c8c8c', marginTop: '4px'}}>
+                                        Questions to Review
+                                    </div>
+                                </Card>
+                            </div>
+                        </div>
+                    </Space>
+                </Modal>
+
+                {/* Reset Confirmation Modal */}
+                <Modal
+                    title="Reset Quiz"
+                    open={isResetModalVisible}
+                    onOk={handleResetConfirm}
+                    onCancel={() => setIsResetModalVisible(false)}
+                    okText="Reset"
+                    cancelText="Cancel"
+                    okButtonProps={{danger: true}}
+                >
+                    <p>Are you sure you want to reset the quiz? This will clear all your progress and start from the
+                        beginning.</p>
+                </Modal>
+            </div>
         </div>
     );
 };

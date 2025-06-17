@@ -329,7 +329,7 @@ const Test = () => {
     }
 
     return (
-        <div style={{height: '100vh', display: 'flex', padding: '24px', backgroundColor: '#f0f2f5'}}>
+        <div style={{minHeight: '100vh', display: 'flex', padding: '24px', backgroundColor: '#f0f2f5'}}>
             {contextHolder}
 
             {/* Left Panel - Question Navigation */}

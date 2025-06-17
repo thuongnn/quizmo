@@ -2,7 +2,6 @@ import {useState} from 'react';
 import {Button, Col, Form, Input, message, Modal, Row, Typography, Upload} from 'antd';
 import {PlusOutlined, UploadOutlined} from '@ant-design/icons';
 import type {UploadFile} from 'antd/es/upload/interface';
-import {useNavigate} from 'react-router-dom';
 import {QuizCard} from '../components/QuizCard';
 import {deleteCourse, getCourses} from '../services/courseService';
 import {saveCourse} from '../utils/storage';
@@ -17,7 +16,6 @@ const UploadPage = () => {
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const [courses, setCourses] = useState<Course[]>(getCourses());
     const [form] = Form.useForm();
-    const navigate = useNavigate();
 
     const handleCancel = () => {
         setIsModalOpen(false);
@@ -70,7 +68,7 @@ const UploadPage = () => {
     };
 
     const handleLearn = (course: Course) => {
-        navigate(`/quiz?courseId=${course.id}`);
+        window.open(`/quiz?courseId=${course.id}`, '_blank');
     };
 
     const handleDelete = (courseId: string) => {
