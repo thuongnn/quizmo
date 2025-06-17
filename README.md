@@ -123,4 +123,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Ant Design](https://ant.design/) for the UI components
 - [React](https://reactjs.org/) for the frontend framework
-- [TypeScript](https://www.typescriptlang.org/) for type safety 
+- [TypeScript](https://www.typescriptlang.org/) for type safety
+
