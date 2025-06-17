@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Button, Card, Col, Form, Input, message, Modal, Row, Typography, Upload} from 'antd';
+import {Button, Col, Form, Input, message, Modal, Row, Typography, Upload} from 'antd';
 import {PlusOutlined, UploadOutlined} from '@ant-design/icons';
 import type {UploadFile} from 'antd/es/upload/interface';
 import {useNavigate} from 'react-router-dom';
