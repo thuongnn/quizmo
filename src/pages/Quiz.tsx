@@ -2,12 +2,12 @@ import {Button, Card, Checkbox, Modal, Progress, Radio, Space, Tag, Typography} 
 import {
     CheckCircleOutlined,
     CloseCircleOutlined,
+    CloseOutlined,
     ReloadOutlined,
     SoundOutlined,
-    WarningOutlined,
-    CloseOutlined
+    WarningOutlined
 } from '@ant-design/icons';
-import {useSearchParams, useNavigate} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import {QUESTIONS_PER_TURN, useQuiz} from '../hooks/useQuiz';
 import {getCourseById} from '../services/courseService';
 import {useState} from 'react';
@@ -177,7 +177,7 @@ const QuizPage = () => {
             }}>
                 <Button
                     type="text"
-                    icon={<CloseOutlined />}
+                    icon={<CloseOutlined/>}
                     onClick={() => navigate('/')}
                     style={{
                         position: 'absolute',
@@ -320,9 +320,9 @@ const QuizPage = () => {
                     onOk={handleNext}
                     onCancel={handleNext}
                     footer={[
-                        <Button 
-                            key="continue" 
-                            type="primary" 
+                        <Button
+                            key="continue"
+                            type="primary"
                             size="large"
                             onClick={handleNext}
                         >
@@ -339,7 +339,7 @@ const QuizPage = () => {
                                     <span style={{color: '#8c8c8c'}}>Overall Progress</span>
                                     <span style={{color: '#8c8c8c'}}>{totalQuestions.length} questions</span>
                                 </div>
-                                <Progress 
+                                <Progress
                                     percent={Math.round((learnedQuestions.length / totalQuestions.length) * 100)}
                                     status="active"
                                     strokeColor="#1890ff"
