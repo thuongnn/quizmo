@@ -4,7 +4,8 @@ import { UploadOutlined, PlusOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { useNavigate } from 'react-router-dom';
 import { QuizCard } from '../components/QuizCard';
-import { saveCourse, getCourses, deleteCourse } from '../services/courseService';
+import { getCourses, deleteCourse } from '../services/courseService';
+import { saveCourse } from '../utils/storage';
 import type { Course } from '../types/course';
 import { parseQuestionText } from '../utils/parser';
 

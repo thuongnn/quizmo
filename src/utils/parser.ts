@@ -1,17 +1,25 @@
 import type { Question } from '../types/quiz';
 
 export const parseQuestionText = (text: string): Omit<Question, 'answer'> => {
-  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-  const question = lines[0];
-  const options: { [key: string]: string } = {};
+  // Find the first option (A, B, C, D) to separate question from options
+  const firstOptionMatch = text.match(/\n([A-Z])[.)]\s/);
+  if (!firstOptionMatch) {
+    throw new Error('Invalid question format: No options found');
+  }
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const match = line.match(/^([A-Z])[.)]\s*(.+)$/);
-    if (match) {
-      const [, key, value] = match;
-      options[key] = value.trim();
-    }
+  const firstOptionIndex = text.indexOf(firstOptionMatch[0]);
+  
+  // Split text into question and options parts
+  const question = text.substring(0, firstOptionIndex).trim();
+  const optionsText = text.substring(firstOptionIndex);
+  
+  // Parse options
+  const options: { [key: string]: string } = {};
+  const optionMatches = optionsText.matchAll(/([A-Z])[.)]\s*([^\n]+)/g);
+  
+  for (const match of optionMatches) {
+    const [, key, value] = match;
+    options[key] = value.trim();
   }
 
   return {

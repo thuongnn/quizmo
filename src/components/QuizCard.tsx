@@ -1,6 +1,7 @@
 import { Card, Typography, Space, Button, Popconfirm } from 'antd';
 import { BookOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { Course } from '../types/course';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -11,36 +12,38 @@ interface QuizCardProps {
 }
 
 export const QuizCard = ({ course, onLearn, onDelete }: QuizCardProps) => {
+  const navigate = useNavigate();
+
   return (
     <Card
       hoverable
       style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}
-      onClick={() => onLearn(course)}
     >
-      <Popconfirm
-        title="Delete Course"
-        description="Are you sure you want to delete this course?"
-        onConfirm={(e) => {
-          e?.stopPropagation();
-          onDelete(course.id);
-        }}
-        onCancel={(e) => e?.stopPropagation()}
-        okText="Yes"
-        cancelText="No"
-      >
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
+      <Space style={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 1,
+      }}>
+        <Popconfirm
+          title="Delete Course"
+          description="Are you sure you want to delete this course?"
+          onConfirm={(e) => {
+            e?.stopPropagation();
+            onDelete(course.id);
           }}
-        />
-      </Popconfirm>
+          onCancel={(e) => e?.stopPropagation()}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </Popconfirm>
+      </Space>
 
       <Title level={4} style={{ marginBottom: 8 }}>{course.name}</Title>
       {course.description && (

@@ -2,25 +2,46 @@ import type { Course } from '../types/course';
 import type { Question } from '../types/quiz';
 import { STORAGE_KEYS } from '../constants/storage';
 
+const COURSES_KEY = STORAGE_KEYS.COURSES;
+
 export const generateCourseId = (): string => {
   return 'course_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 };
 
-export const saveCourse = (course: Omit<Course, 'id'>): Course => {
-  const courses = getCourses();
-  const newCourse: Course = {
-    ...course,
-    id: generateCourseId(),
-    createdAt: Date.now()
-  };
-  courses.push(newCourse);
-  localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(courses));
-  return newCourse;
+export const getCourses = (): Course[] => {
+  const coursesJson = localStorage.getItem(COURSES_KEY);
+  return coursesJson ? JSON.parse(coursesJson) : [];
 };
 
-export const getCourses = (): Course[] => {
-  const courses = localStorage.getItem(STORAGE_KEYS.COURSES);
-  return courses ? JSON.parse(courses) : [];
+export const getCourseById = (id: string): Course | undefined => {
+  const courses = getCourses();
+  return courses.find(course => course.id === id);
+};
+
+export const saveCourse = (course: Omit<Course, 'id'> | Course): Course => {
+  const courses = getCourses();
+  let updatedCourse: Course;
+
+  if ('id' in course) {
+    // Update existing course
+    const existingCourseIndex = courses.findIndex(c => c.id === course.id);
+    if (existingCourseIndex === -1) {
+      throw new Error('Course not found');
+    }
+    updatedCourse = course as Course;
+    courses[existingCourseIndex] = updatedCourse;
+  } else {
+    // Create new course
+    updatedCourse = {
+      ...course,
+      id: generateCourseId(),
+      createdAt: Date.now()
+    };
+    courses.push(updatedCourse);
+  }
+  
+  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  return updatedCourse;
 };
 
 export const getQuestionsByCourseId = (courseId: string): Question[] => {
@@ -32,5 +53,5 @@ export const getQuestionsByCourseId = (courseId: string): Question[] => {
 export const deleteCourse = (courseId: string): void => {
   const courses = getCourses();
   const updatedCourses = courses.filter(course => course.id !== courseId);
-  localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(updatedCourses));
+  localStorage.setItem(COURSES_KEY, JSON.stringify(updatedCourses));
 }; 

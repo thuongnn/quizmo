@@ -1,5 +1,5 @@
 import { Layout, Menu, theme } from 'antd';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -54,6 +54,11 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               key: 'upload',
               icon: <QuestionCircleOutlined />,
               label: 'My Courses',
+            },
+            {
+              key: 'test',
+              icon: <FileTextOutlined />,
+              label: 'Practice Test',
             },
           ]}
           style={{ 
