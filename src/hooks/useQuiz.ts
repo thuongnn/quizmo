@@ -24,12 +24,9 @@ export const useQuiz = (courseId: string | null) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
     const [showResult, setShowResult] = useState(false);
-    const [score, setScore] = useState(0);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-    const [userAnswers, setUserAnswers] = useState<string[]>([]);
     const [isMuted, setIsMuted] = useState(false);
     const [incorrectQuestions, setIncorrectQuestions] = useState<Question[]>([]);
-    const [currentTurn, setCurrentTurn] = useState(1);
     const [totalQuestions, setTotalQuestions] = useState<Question[]>([]);
     const [learnedQuestions, setLearnedQuestions] = useState<Question[]>([]);
 
@@ -50,19 +47,8 @@ export const useQuiz = (courseId: string | null) => {
         // Load saved state if exists
         const savedState = getQuizState(courseId);
         if (savedState) {
-            setCurrentIndex(savedState.currentIndex);
-            setScore(savedState.score);
-            setUserAnswers(savedState.userAnswers);
             setIncorrectQuestions(savedState.incorrectQuestions || []);
-            setCurrentTurn(savedState.currentTurn || 1);
             setLearnedQuestions(savedState.learnedQuestions || []);
-            if (savedState.currentIndex < loadedQuestions.length) {
-                const savedAnswers = savedState.userAnswers[savedState.currentIndex]?.split(',') || [];
-                setSelectedAnswers(savedAnswers);
-                setShowResult(true);
-                const correctAnswers = loadedQuestions[savedState.currentIndex].answer.split(',');
-                setIsCorrect(savedAnswers.sort().join(',') === correctAnswers.sort().join(','));
-            }
         }
 
         // Prepare questions for current turn
@@ -73,8 +59,10 @@ export const useQuiz = (courseId: string | null) => {
         let turnQuestions: Question[] = [];
 
         // If we have previous incorrect questions and it's not the first turn
-        if (previousIncorrectQuestions.length > 0 && currentTurn > 1) {
-            const reviewQuestions = previousIncorrectQuestions.slice(0, REVIEW_QUESTIONS_PER_TURN);
+        if (previousIncorrectQuestions.length > 0 && currentIndex > 0) {
+            // Randomly select review questions from previous incorrect questions
+            const shuffledIncorrect = [...previousIncorrectQuestions].sort(() => 0.5 - Math.random());
+            const reviewQuestions = shuffledIncorrect.slice(0, REVIEW_QUESTIONS_PER_TURN);
             turnQuestions = [...reviewQuestions];
         }
 
@@ -116,7 +104,6 @@ export const useQuiz = (courseId: string | null) => {
         setIsCorrect(isAnswerCorrect);
 
         if (isAnswerCorrect) {
-            setScore(prev => prev + 1);
             playSound(true);
             message.success('Correct!', 1);
 
@@ -124,7 +111,15 @@ export const useQuiz = (courseId: string | null) => {
             const currentQuestion = questions[currentIndex];
             setLearnedQuestions(prev => {
                 if (!prev.some(q => q.question === currentQuestion.question)) {
-                    return [...prev, currentQuestion];
+                    const updated = [...prev, currentQuestion];
+                    // Save to localStorage
+                    const oldState = getQuizState(courseId!);
+                    saveQuizState(courseId!, {
+                        incorrectQuestions,
+                        learnedQuestions: updated,
+                        chatgptHistory: oldState?.chatgptHistory || [],
+                    });
+                    return updated;
                 }
                 return prev;
             });
@@ -132,7 +127,17 @@ export const useQuiz = (courseId: string | null) => {
             // If this was a review question (from incorrectQuestions), remove it
             const isReviewQuestion = incorrectQuestions.some(q => q.question === currentQuestion.question);
             if (isReviewQuestion) {
-                setIncorrectQuestions(prev => prev.filter(q => q.question !== currentQuestion.question));
+                setIncorrectQuestions(prev => {
+                    const updated = prev.filter(q => q.question !== currentQuestion.question);
+                    // Save to localStorage
+                    const oldState = getQuizState(courseId!);
+                    saveQuizState(courseId!, {
+                        incorrectQuestions: updated,
+                        learnedQuestions,
+                        chatgptHistory: oldState?.chatgptHistory || [],
+                    });
+                    return updated;
+                });
                 message.success('Great job! This question has been removed from review.', 2);
             }
         } else {
@@ -141,47 +146,32 @@ export const useQuiz = (courseId: string | null) => {
             // Add to incorrect questions if not already present
             setIncorrectQuestions(prev => {
                 if (!prev.some(q => q.question === questions[currentIndex].question)) {
-                    return [...prev, questions[currentIndex]];
+                    const updated = [...prev, questions[currentIndex]];
+                    // Save to localStorage
+                    const oldState = getQuizState(courseId!);
+                    saveQuizState(courseId!, {
+                        incorrectQuestions: updated,
+                        learnedQuestions,
+                        chatgptHistory: oldState?.chatgptHistory || [],
+                    });
+                    return updated;
                 }
                 return prev;
             });
         }
 
         setShowResult(true);
-
-        // Save answer to userAnswers array
-        const newUserAnswers = [...userAnswers];
-        newUserAnswers[currentIndex] = selectedAnswers.join(',');
-        setUserAnswers(newUserAnswers);
-        const oldState = getQuizState(courseId!);
-        saveQuizState(courseId!, {
-            questions,
-            currentIndex,
-            score,
-            userAnswers: newUserAnswers,
-            incorrectQuestions,
-            learnedQuestions,
-            currentTurn,
-            questionsPerTurn: QUESTIONS_PER_TURN,
-            reviewQuestionsPerTurn: REVIEW_QUESTIONS_PER_TURN,
-            chatgptHistory: oldState?.chatgptHistory || [],
-        });
     };
 
     const handleNext = () => {
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
-            const nextAnswers = userAnswers[currentIndex + 1]?.split(',') || [];
-            setSelectedAnswers(nextAnswers);
+            setSelectedAnswers([]);
             setShowResult(false);
             setIsCorrect(null);
         } else {
             // End of current turn
-            message.success(`Turn ${currentTurn} completed! Your score: ${score}/${questions.length}`);
-            setCurrentTurn(prev => prev + 1);
             setCurrentIndex(0);
-            setScore(0);
-            setUserAnswers([]);
             setSelectedAnswers([]);
             setShowResult(false);
             setIsCorrect(null);
@@ -197,11 +187,8 @@ export const useQuiz = (courseId: string | null) => {
         setSelectedAnswers([]);
         setShowResult(false);
         setIsCorrect(null);
-        setScore(0);
-        setUserAnswers([]);
         setIncorrectQuestions([]);
         setLearnedQuestions([]);
-        setCurrentTurn(1);
         resetQuizState(courseId!);
 
         // Prepare questions for new turn
@@ -231,16 +218,13 @@ export const useQuiz = (courseId: string | null) => {
         currentIndex,
         selectedAnswers,
         showResult,
-        score,
         isCorrect,
-        userAnswers,
         isMuted,
         setIsMuted,
         handleAnswer,
         handleNext,
         handleReset,
         handleOptionChange,
-        currentTurn,
         incorrectQuestions,
         totalQuestions,
         learnedQuestions,

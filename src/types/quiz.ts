@@ -7,14 +7,7 @@ export interface Question {
 }
 
 export interface QuizState {
-    questions: Question[];
-    currentIndex: number;
-    score: number;
-    userAnswers: string[];
     incorrectQuestions: Question[]; // Track questions that were answered incorrectly
     learnedQuestions: Question[];
-    currentTurn: number; // Track current turn number
-    questionsPerTurn: number; // Number of questions per turn
-    reviewQuestionsPerTurn: number; // Number of review questions per turn
     chatgptHistory?: any[]; // Add this line to store chat history
 } 

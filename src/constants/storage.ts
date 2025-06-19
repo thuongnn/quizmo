@@ -5,9 +5,7 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const CHATGPT_HISTORY_KEY = 'chatgpt_history';
-
-export const CHATGPT_MAX_HISTORY = 10;
-
+export const CHATGPT_MAX_HISTORY = 30;
 export const CHATGPT_CONFIG_KEY = 'chatgpt_config';
 export const CHATGPT_DEFAULT_MAX_TOKENS = 500;
 export const CHATGPT_DEFAULT_SYSTEM_ROLE = 'system';
