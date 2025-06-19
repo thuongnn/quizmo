@@ -1,11 +1,10 @@
-import { Button, Card, Checkbox, Modal, Progress, Radio, Space, Tag, Typography, Badge } from 'antd';
+import { Button, Card, Checkbox, Modal, Progress, Radio, Space, Typography, Badge, Form, Input, message } from 'antd';
 import {
     CheckCircleOutlined,
     CloseCircleOutlined,
     CloseOutlined,
     ReloadOutlined,
     SoundOutlined,
-    WarningOutlined,
     MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -32,6 +31,10 @@ const QuizPage = () => {
     const [hasShownInitialModal, setHasShownInitialModal] = useState(false);
     const [answeredCount, setAnsweredCount] = useState(0);
     const chatBoxRef = useRef<any>(null);
+    const [isUpdateAnswerModalVisible, setIsUpdateAnswerModalVisible] = useState(false);
+    const [updateAnswerValue, setUpdateAnswerValue] = useState('');
+    const [updateAnswerLoading, setUpdateAnswerLoading] = useState(false);
+    const [form] = Form.useForm();
 
     const {
         questions,
@@ -207,6 +210,56 @@ const QuizPage = () => {
         }
     };
 
+    // Update answer handler
+    const handleShowUpdateAnswerModal = () => {
+        setUpdateAnswerValue(currentQuestion?.answer || '');
+        setIsUpdateAnswerModalVisible(true);
+    };
+    const handleUpdateAnswer = async () => {
+        setUpdateAnswerLoading(true);
+        try {
+            // 1. Update in 'courses' localStorage
+            const courses = JSON.parse(localStorage.getItem('courses') || '[]');
+            const courseIndex = courses.findIndex((c: any) => c.id === courseId);
+            if (courseIndex !== -1) {
+                courses[courseIndex].questions = courses[courseIndex].questions.map((q: any) =>
+                    q.id === currentQuestion.id ? { ...q, answer: updateAnswerValue } : q
+                );
+                localStorage.setItem('courses', JSON.stringify(courses));
+            }
+
+            // 2. Update in quiz_state_{courseId}
+            const quizStateKey = `quiz_state_${courseId}`;
+            const quizState = JSON.parse(localStorage.getItem(quizStateKey) || '{}');
+            if (quizState) {
+                let changed = false;
+                if (Array.isArray(quizState.learnedQuestions)) {
+                    quizState.learnedQuestions = quizState.learnedQuestions.map((q: any) =>
+                        q.id === currentQuestion.id ? { ...q, answer: updateAnswerValue } : q
+                    );
+                    changed = true;
+                }
+                if (Array.isArray(quizState.incorrectQuestions)) {
+                    quizState.incorrectQuestions = quizState.incorrectQuestions.map((q: any) =>
+                        q.id === currentQuestion.id ? { ...q, answer: updateAnswerValue } : q
+                    );
+                    changed = true;
+                }
+                if (changed) {
+                    localStorage.setItem(quizStateKey, JSON.stringify(quizState));
+                }
+            }
+
+            message.success('Cập nhật đáp án thành công!');
+            setIsUpdateAnswerModalVisible(false);
+            // Optional: reload page or update UI if needed
+        } catch (e) {
+            message.error('Có lỗi khi cập nhật đáp án!');
+        } finally {
+            setUpdateAnswerLoading(false);
+        }
+    };
+
     if (!courseId || !course) {
         return <div>Course not found</div>;
     }
@@ -335,6 +388,13 @@ const QuizPage = () => {
                 </Space>
 
                 <div style={{ marginTop: 20, textAlign: 'center' }}>
+                    <Button
+                        type="default"
+                        onClick={handleShowUpdateAnswerModal}
+                        style={{marginBottom: 12, marginRight: 8}}
+                    >
+                        Cập nhật đáp án
+                    </Button>
                     {!showResult ? (
                         <Button
                             type="primary"
@@ -461,6 +521,26 @@ const QuizPage = () => {
                     } : undefined}
                     courseId={courseId}
                 />
+
+                <Modal
+                    title={`Cập nhật đáp án cho câu hỏi`}
+                    open={isUpdateAnswerModalVisible}
+                    onOk={handleUpdateAnswer}
+                    onCancel={() => setIsUpdateAnswerModalVisible(false)}
+                    confirmLoading={updateAnswerLoading}
+                    okText="Cập nhật"
+                    cancelText="Hủy"
+                >
+                    <Form form={form} layout="vertical">
+                        <Form.Item label="Đáp án mới" required>
+                            <Input
+                                value={updateAnswerValue}
+                                onChange={e => setUpdateAnswerValue(e.target.value)}
+                                placeholder="Nhập đáp án mới (ví dụ: A hoặc A,B)"
+                            />
+                        </Form.Item>
+                    </Form>
+                </Modal>
             </div>
         </div>
     );

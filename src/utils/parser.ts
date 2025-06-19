@@ -13,7 +13,6 @@ export function parseQuestionText(text: string): Question {
             question: text,
             options: {} as Record<string, string>,
             answer: '',
-            explanation: ''
         };
     }
 
@@ -44,6 +43,5 @@ export function parseQuestionText(text: string): Question {
         question: questionText,
         options,
         answer: Object.keys(options)[0], // Assuming first option is correct
-        explanation: ''
     };
 } 

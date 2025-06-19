@@ -3,7 +3,6 @@ export interface Question {
     question: string;
     options: Record<string, string>;
     answer: string;
-    explanation: string;
 }
 
 export interface QuizState {

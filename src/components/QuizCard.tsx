@@ -1,5 +1,5 @@
 import {Button, Card, Modal, Space, Typography} from 'antd';
-import {BookOutlined, DeleteOutlined, ExclamationCircleOutlined} from '@ant-design/icons';
+import {BookOutlined, DeleteOutlined, ExclamationCircleOutlined, DownloadOutlined} from '@ant-design/icons';
 import type {Course} from '../types/course';
 import {useState} from 'react';
 
@@ -22,6 +22,18 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
     const handleDelete = () => {
         onDelete(course.id);
         setIsDeleteModalVisible(false);
+    };
+
+    // Download course as JSON
+    const handleDownload = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(course?.questions, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `${course.name || 'course'}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     };
 
     return (
@@ -94,16 +106,22 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
                         <Text type="secondary">Questions:</Text>
                         <Text strong style={{color: '#1890ff'}}>{course.questions.length}</Text>
                     </Space>
-                    <Button
-                        type="primary"
-                        icon={<BookOutlined/>}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onLearn(course);
-                        }}
-                    >
-                        Learn
-                    </Button>
+                    <Space>
+                        <Button
+                            icon={<DownloadOutlined/>}
+                            onClick={handleDownload}
+                        />
+                        <Button
+                            type="primary"
+                            icon={<BookOutlined/>}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onLearn(course);
+                            }}
+                        >
+                            Learn
+                        </Button>
+                    </Space>
                 </Space>
             </div>
 
