@@ -74,9 +74,7 @@ export const useQuiz = (courseId: string | null) => {
 
         // If we have previous incorrect questions and it's not the first turn
         if (previousIncorrectQuestions.length > 0 && currentTurn > 1) {
-            // Randomly select review questions from previous incorrect questions
-            const shuffledIncorrect = [...previousIncorrectQuestions].sort(() => 0.5 - Math.random());
-            const reviewQuestions = shuffledIncorrect.slice(0, REVIEW_QUESTIONS_PER_TURN);
+            const reviewQuestions = previousIncorrectQuestions.slice(0, REVIEW_QUESTIONS_PER_TURN);
             turnQuestions = [...reviewQuestions];
         }
 
@@ -86,11 +84,7 @@ export const useQuiz = (courseId: string | null) => {
             !turnQuestions.some(tq => tq.question === q.question) &&
             !learnedQuestions.some(lq => lq.question === q.question)
         );
-        const shuffledAvailable = [...availableQuestions].sort(() => 0.5 - Math.random());
-        turnQuestions = [...turnQuestions, ...shuffledAvailable.slice(0, remainingSlots)];
-
-        // Shuffle all questions for the turn
-        turnQuestions = turnQuestions.sort(() => 0.5 - Math.random());
+        turnQuestions = [...turnQuestions, ...availableQuestions.slice(0, remainingSlots)];
         setQuestions(turnQuestions);
     };
 
