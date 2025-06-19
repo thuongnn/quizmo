@@ -5,10 +5,11 @@ import QuizPage from './pages/Quiz';
 import TestList from './pages/TestList';
 import Test from './pages/Test';
 import './App.css';
+import { ConfigProvider } from 'antd';
 
 function App() {
     return (
-        <>
+        <ConfigProvider>
             <Routes>
                 <Route path="/test/exam" element={<Test/>}/>
                 <Route path="/quiz" element={<QuizPage/>}/>
@@ -22,7 +23,7 @@ function App() {
                     </MainLayout>
                 }/>
             </Routes>
-        </>
+        </ConfigProvider>
     );
 }
 

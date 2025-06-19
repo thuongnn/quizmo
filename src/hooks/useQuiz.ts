@@ -159,6 +159,7 @@ export const useQuiz = (courseId: string | null) => {
         const newUserAnswers = [...userAnswers];
         newUserAnswers[currentIndex] = selectedAnswers.join(',');
         setUserAnswers(newUserAnswers);
+        const oldState = getQuizState(courseId!);
         saveQuizState(courseId!, {
             questions,
             currentIndex,
@@ -168,7 +169,8 @@ export const useQuiz = (courseId: string | null) => {
             learnedQuestions,
             currentTurn,
             questionsPerTurn: QUESTIONS_PER_TURN,
-            reviewQuestionsPerTurn: REVIEW_QUESTIONS_PER_TURN
+            reviewQuestionsPerTurn: REVIEW_QUESTIONS_PER_TURN,
+            chatgptHistory: oldState?.chatgptHistory || [],
         });
     };
 

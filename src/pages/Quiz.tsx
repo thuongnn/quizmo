@@ -5,12 +5,14 @@ import {
     CloseOutlined,
     ReloadOutlined,
     SoundOutlined,
-    WarningOutlined
+    WarningOutlined,
+    MessageOutlined
 } from '@ant-design/icons';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {QUESTIONS_PER_TURN, useQuiz} from '../hooks/useQuiz';
 import {getCourseById} from '../services/courseService';
-import {useState} from 'react';
+import {useState, useRef} from 'react';
+import ChatBox from '../components/ChatBox';
 
 // Import sound files
 import correctSound from '../assets/sounds/correct.mp3';
@@ -24,6 +26,8 @@ const QuizPage = () => {
     const courseId = searchParams.get('courseId');
     const course = courseId ? getCourseById(courseId) : null;
     const [isResetModalVisible, setIsResetModalVisible] = useState(false);
+    const [isChatVisible, setIsChatVisible] = useState(false);
+    const chatBoxRef = useRef<any>(null);
 
     const {
         questions,
@@ -148,6 +152,13 @@ const QuizPage = () => {
     const handleResetConfirm = () => {
         handleReset();
         setIsResetModalVisible(false);
+    };
+
+    const handleNextWithChat = () => {
+        handleNext();
+        setTimeout(() => {
+            chatBoxRef.current?.appendAskButton();
+        }, 0);
     };
 
     if (!courseId || !course) {
@@ -303,7 +314,7 @@ const QuizPage = () => {
                     ) : (
                         <Button
                             type="primary"
-                            onClick={handleNext}
+                            onClick={handleNextWithChat}
                             size="middle"
                             style={{minWidth: 100}}
                         >
@@ -315,14 +326,14 @@ const QuizPage = () => {
                 <Modal
                     title="Are you ready to continue?"
                     open={currentIndex === questions.length - 1 && showResult}
-                    onOk={handleNext}
-                    onCancel={handleNext}
+                    onOk={handleNextWithChat}
+                    onCancel={handleNextWithChat}
                     footer={[
                         <Button
                             key="continue"
                             type="primary"
                             size="large"
-                            onClick={handleNext}
+                            onClick={handleNextWithChat}
                         >
                             Continue
                         </Button>
@@ -380,6 +391,38 @@ const QuizPage = () => {
                     <p>Are you sure you want to reset the quiz? This will clear all your progress and start from the
                         beginning.</p>
                 </Modal>
+
+                {/* Float Chat Button */}
+                <Button
+                    type="primary"
+                    shape="circle"
+                    size="large"
+                    icon={<MessageOutlined />}
+                    onClick={() => setIsChatVisible(!isChatVisible)}
+                    style={{
+                        position: 'fixed',
+                        bottom: '24px',
+                        right: '24px',
+                        width: '60px',
+                        height: '60px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        zIndex: 999,
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                    }}
+                />
+
+                {/* Chat Box */}
+                <ChatBox
+                    ref={chatBoxRef}
+                    visible={isChatVisible}
+                    onClose={() => setIsChatVisible(false)}
+                    currentQuestion={currentQuestion ? {
+                        question: currentQuestion.question,
+                        options: currentQuestion.options
+                    } : undefined}
+                    courseId={courseId}
+                />
             </div>
         </div>
     );

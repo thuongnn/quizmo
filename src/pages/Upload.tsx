@@ -68,7 +68,7 @@ const UploadPage = () => {
     };
 
     const handleLearn = (course: Course) => {
-        window.open(`/quiz?courseId=${course.id}`, '_blank');
+        window.location.href = `/quiz?courseId=${course.id}`;
     };
 
     const handleDelete = (courseId: string) => {

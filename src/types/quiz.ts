@@ -16,4 +16,5 @@ export interface QuizState {
     currentTurn: number; // Track current turn number
     questionsPerTurn: number; // Number of questions per turn
     reviewQuestionsPerTurn: number; // Number of review questions per turn
+    chatgptHistory?: any[]; // Add this line to store chat history
 } 
