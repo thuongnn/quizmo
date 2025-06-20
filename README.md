@@ -132,6 +132,19 @@ The parser automatically extracts:
 
 ## 📱 Usage
 
+### Getting Started
+To get started with QuizMo, you can import the sample course included in this repository:
+
+1. **Import Sample Course**:
+   - Click "Upload New Course" on the home page
+   - Enter the following details:
+     - **Title**: Example Course
+     - **Description**: AWS Certified DevOps Engineer - Validates advanced skills in automating, operating, and managing AWS environments.
+   - Upload the `ex-aws-devops.json` file from the repository root
+   - Click "Upload" to create your first course
+
+This sample course contains AWS DevOps questions that demonstrate the application's features and help you understand how to use the platform.
+
 ### Creating a Course
 1. Click "Upload New Course" on the home page
 2. Enter course title and description

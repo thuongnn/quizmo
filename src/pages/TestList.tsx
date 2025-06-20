@@ -82,7 +82,7 @@ const TestList = () => {
                                             type="primary"
                                             icon={<BookOutlined/>}
                                             onClick={() => handleStartTest(course.id)}
-                                            disabled={course.questions.length < 65}
+                                            // disabled={course.questions.length < 65}
                                         >
                                             Start Test
                                         </Button>
