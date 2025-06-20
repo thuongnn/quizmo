@@ -147,11 +147,11 @@ const Test = () => {
                 }
 
                 const loadedQuestions = getQuestionsByCourseId(courseId);
-                if (loadedQuestions.length < TOTAL_QUESTIONS) {
-                    messageApi.error('Not enough questions for a full test');
-                    navigate('/');
-                    return;
-                }
+                // if (loadedQuestions.length < TOTAL_QUESTIONS) {
+                //     messageApi.error('Not enough questions for a full test');
+                //     navigate('/');
+                //     return;
+                // }
 
                 // Get test name from courseId
                 const course = getCourseById(courseId);
