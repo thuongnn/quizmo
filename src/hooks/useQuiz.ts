@@ -25,7 +25,6 @@ export const useQuiz = (courseId: string | null) => {
     const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
     const [showResult, setShowResult] = useState(false);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-    const [isMuted, setIsMuted] = useState(false);
     const [incorrectQuestions, setIncorrectQuestions] = useState<Question[]>([]);
     const [totalQuestions, setTotalQuestions] = useState<Question[]>([]);
     const [learnedQuestions, setLearnedQuestions] = useState<Question[]>([]);
@@ -77,14 +76,12 @@ export const useQuiz = (courseId: string | null) => {
     };
 
     const playSound = (isCorrect: boolean) => {
-        if (!isMuted) {
-            if (isCorrect) {
-                correctAudio.currentTime = 0;
-                correctAudio.play().catch(console.error);
-            } else {
-                incorrectAudio.currentTime = 0;
-                incorrectAudio.play().catch(console.error);
-            }
+        if (isCorrect) {
+            correctAudio.currentTime = 0;
+            correctAudio.play().catch(console.error);
+        } else {
+            incorrectAudio.currentTime = 0;
+            incorrectAudio.play().catch(console.error);
         }
     };
 
@@ -219,8 +216,6 @@ export const useQuiz = (courseId: string | null) => {
         selectedAnswers,
         showResult,
         isCorrect,
-        isMuted,
-        setIsMuted,
         handleAnswer,
         handleNext,
         handleReset,

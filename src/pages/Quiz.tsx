@@ -3,9 +3,9 @@ import {
     CheckCircleOutlined,
     CloseCircleOutlined,
     CloseOutlined,
-    ReloadOutlined,
-    SoundOutlined,
-    MessageOutlined
+    HistoryOutlined,
+    MessageOutlined,
+    EditOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuiz } from '../hooks/useQuiz';
@@ -41,8 +41,6 @@ const QuizPage = () => {
         currentIndex,
         selectedAnswers,
         showResult,
-        isMuted,
-        setIsMuted,
         handleAnswer,
         handleNext,
         handleReset,
@@ -296,32 +294,29 @@ const QuizPage = () => {
                         fontSize: '16px'
                     }}
                 />
+                <Button
+                    type="text"
+                    icon={<HistoryOutlined />}
+                    onClick={showResetModal}
+                    style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '60px',
+                        fontSize: '16px'
+                    }}
+                    title="Reset Quiz"
+                />
                 <div style={{ marginBottom: 24 }}>
                     <Text style={{ fontSize: 24, fontWeight: 500 }}>{course.name}</Text>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <Progress
-                        percent={getProgressPercent()}
+                        status="active"
                         showInfo={false}
-                        style={{ flex: 1, marginRight: 16, width: "100%" }}
                         strokeWidth={10}
+                        percent={getProgressPercent()}
+                        strokeColor={{ from: '#108ee9', to: '#87d068' }}
                     />
-                    <Space>
-                        <Button
-                            icon={<SoundOutlined />}
-                            onClick={() => setIsMuted(!isMuted)}
-                            type={isMuted ? 'default' : 'primary'}
-                        >
-                            {isMuted ? 'Unmute' : 'Mute'}
-                        </Button>
-                        <Button
-                            icon={<ReloadOutlined />}
-                            onClick={showResetModal}
-                            size="middle"
-                        >
-                            Reset Quiz
-                        </Button>
-                    </Space>
                 </div>
 
                 <Badge.Ribbon
@@ -344,7 +339,19 @@ const QuizPage = () => {
                             position: 'relative',
                         }}
                     >
-                        {isReviewQuestion && <br/>}
+                        {isReviewQuestion && <br />}
+                        <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={handleShowUpdateAnswerModal}
+                            style={{
+                                position: 'absolute',
+                                top: '1px',
+                                right: '1px',
+                                fontSize: '14px'
+                            }}
+                            title="Cập nhật đáp án"
+                        />
                         <div dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
                     </div>
                 </Badge.Ribbon>
@@ -388,13 +395,6 @@ const QuizPage = () => {
                 </Space>
 
                 <div style={{ marginTop: 20, textAlign: 'center' }}>
-                    <Button
-                        type="default"
-                        onClick={handleShowUpdateAnswerModal}
-                        style={{marginBottom: 12, marginRight: 8}}
-                    >
-                        Cập nhật đáp án
-                    </Button>
                     {!showResult ? (
                         <Button
                             type="primary"
@@ -523,7 +523,7 @@ const QuizPage = () => {
                 />
 
                 <Modal
-                    title={`Cập nhật đáp án cho câu hỏi`}
+                    title="Cập nhật đáp án cho câu hỏi"
                     open={isUpdateAnswerModalVisible}
                     onOk={handleUpdateAnswer}
                     onCancel={() => setIsUpdateAnswerModalVisible(false)}

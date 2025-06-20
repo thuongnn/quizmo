@@ -27,7 +27,23 @@ export const QuizCard = ({course, onLearn, onDelete}: QuizCardProps) => {
     // Download course as JSON
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(course?.questions, null, 2));
+        
+        // Transform questions to the required format
+        const formattedQuestions = course?.questions?.map(q => {
+            // Combine question and options into one string
+            const optionsText = Object.entries(q.options || {})
+                .map(([key, value]) => `${key}. ${value}`)
+                .join('\n');
+            
+            const questionText = `${q.question}\n${optionsText}`;
+            
+            return {
+                question: questionText,
+                answer: q.answer
+            };
+        }) || [];
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formattedQuestions, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
         downloadAnchorNode.setAttribute("download", `${course.name || 'course'}.json`);
