@@ -2,6 +2,8 @@
 
 QuizMo is a modern, interactive quiz application built with React, TypeScript, and Ant Design. It provides a comprehensive learning experience with AI-powered assistance, progress tracking, and multiple quiz modes. The application is designed to work seamlessly with questions crawled from ExamTopics using the [Quizlet Crawler](https://github.com/thuongnn/Quizlet-Crawler.git) Chrome extension.
 
+![QuizMo Home Screen](images/home.png)
+
 ## 🚀 Features
 
 ### 📚 Course Management
@@ -14,6 +16,7 @@ QuizMo is a modern, interactive quiz application built with React, TypeScript, a
 ### 🎯 Quiz Modes
 
 #### 1. Learning Mode (`/quiz`)
+![QuizMo Learning Mode](images/learn.png)
 - **Interactive Learning**: Step-by-step question progression
 - **Progress Tracking**: Visual progress indicators and statistics
 - **Answer Validation**: Immediate feedback with correct/incorrect indicators
@@ -22,6 +25,7 @@ QuizMo is a modern, interactive quiz application built with React, TypeScript, a
 - **Answer Editing**: Ability to update question answers during review
 
 #### 2. Test Mode (`/test/exam`)
+![QuizMo Test Mode](images/practice-test.png)
 - **Timed Exams**: 2-hour timed test sessions
 - **Random Questions**: 65 randomly selected questions per test
 - **Navigation**: Easy question navigation with progress indicators
