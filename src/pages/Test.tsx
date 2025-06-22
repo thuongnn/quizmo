@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from 'react';
-import {Button, Card, Checkbox, Col, message, Modal, Progress, Radio, Row, Space, Spin, Typography} from 'antd';
+import {Button, Card, Checkbox, Col, message, Modal, Progress, Radio, Row, Space, Spin, Typography, Form, InputNumber, Divider} from 'antd';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {getCourseById, getQuestionsByCourseId} from '../services/courseService';
 import type {Question} from '../types/quiz';
@@ -9,13 +9,14 @@ import {
     CloseCircleOutlined,
     ExclamationCircleOutlined,
     LeftOutlined,
-    RightOutlined
+    RightOutlined,
+    SettingOutlined
 } from '@ant-design/icons';
 
 const {Title, Text} = Typography;
 
-const TEST_DURATION = 120 * 60; // 2 hours in seconds
-const TOTAL_QUESTIONS = 65;
+const DEFAULT_TEST_DURATION = 120 * 60; // 2 hours in seconds
+const DEFAULT_TOTAL_QUESTIONS = 65;
 
 // Memoized Question Card component
 const QuestionCard = ({
@@ -113,7 +114,7 @@ const Test = () => {
     const courseId = searchParams.get('courseId');
     const [questions, setQuestions] = useState<Question[]>([]);
     const [answers, setAnswers] = useState<Record<number, string[]>>({});
-    const [timeLeft, setTimeLeft] = useState(TEST_DURATION);
+    const [timeLeft, setTimeLeft] = useState(DEFAULT_TEST_DURATION);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
     const [isResultsModalVisible, setIsResultsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +124,38 @@ const Test = () => {
     const [isSubmitConfirmVisible, setIsSubmitConfirmVisible] = useState(false);
     const [isExitConfirmVisible, setIsExitConfirmVisible] = useState(false);
     const [testName, setTestName] = useState('');
+    const [testDuration, setTestDuration] = useState(DEFAULT_TEST_DURATION);
+    const [totalQuestions, setTotalQuestions] = useState(DEFAULT_TOTAL_QUESTIONS);
+    const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
+    const [settingsForm] = Form.useForm();
+
+    // Helper function to load testing options from localStorage
+    const loadTestingOptions = () => {
+        const savedOptions = localStorage.getItem('testing_options');
+        if (savedOptions) {
+            try {
+                const options = JSON.parse(savedOptions);
+                return {
+                    testDuration: options.testDuration || DEFAULT_TEST_DURATION,
+                    totalQuestions: options.totalQuestions || DEFAULT_TOTAL_QUESTIONS
+                };
+            } catch (error) {
+                console.error('Failed to parse testing options from localStorage:', error);
+            }
+        }
+        return {
+            testDuration: DEFAULT_TEST_DURATION,
+            totalQuestions: DEFAULT_TOTAL_QUESTIONS
+        };
+    };
+
+    // Load testing options from localStorage on component mount
+    useEffect(() => {
+        const options = loadTestingOptions();
+        setTestDuration(options.testDuration);
+        setTimeLeft(options.testDuration);
+        setTotalQuestions(options.totalQuestions);
+    }, []);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -159,9 +192,9 @@ const Test = () => {
                     setTestName(course.name);
                 }
 
-                // Randomly select 65 questions
+                // Randomly select questions based on totalQuestions state
                 const shuffled = [...loadedQuestions].sort(() => 0.5 - Math.random());
-                setQuestions(shuffled.slice(0, TOTAL_QUESTIONS));
+                setQuestions(shuffled.slice(0, totalQuestions));
             } catch (error) {
                 console.log(error);
                 messageApi.error('Failed to load questions');
@@ -171,8 +204,11 @@ const Test = () => {
             }
         };
 
-        loadQuestions();
-    }, [courseId, navigate, messageApi]);
+        // Only load questions if we have a courseId and totalQuestions is set
+        if (courseId && totalQuestions > 0) {
+            loadQuestions();
+        }
+    }, [courseId, navigate, messageApi, totalQuestions]);
 
     useEffect(() => {
         let timer: ReturnType<typeof setInterval>;
@@ -240,10 +276,10 @@ const Test = () => {
         return {
             correct,
             answered,
-            total: TOTAL_QUESTIONS,
+            total: totalQuestions,
             percentage: answered > 0 ? Math.round((correct / answered) * 100) : 0
         };
-    }, [questions, answers]);
+    }, [questions, answers, totalQuestions]);
 
     const handleSubmit = () => {
         if (isSubmitted) return;
@@ -315,6 +351,54 @@ const Test = () => {
         };
     };
 
+    const handleOpenSettings = () => {
+        if (isSubmitted) {
+            messageApi.warning('Cannot change settings after test submission');
+            return;
+        }
+        
+        settingsForm.setFieldsValue({
+            totalQuestions: totalQuestions,
+            testDuration: Math.floor(testDuration / 60) // Convert seconds to minutes
+        });
+        setIsSettingsModalVisible(true);
+    };
+
+    const handleSettingsSave = () => {
+        settingsForm.validateFields().then((values) => {
+            const newTotalQuestions = values.totalQuestions;
+            const newTestDuration = values.testDuration * 60; // Convert minutes to seconds
+            
+            // Save to localStorage
+            const testingOptions = {
+                testDuration: newTestDuration,
+                totalQuestions: newTotalQuestions
+            };
+            localStorage.setItem('testing_options', JSON.stringify(testingOptions));
+            
+            setTotalQuestions(newTotalQuestions);
+            setTestDuration(newTestDuration);
+            setTimeLeft(newTestDuration);
+            setAnswers({}); // Reset answers
+            setCurrentQuestionIndex(0); // Reset to first question
+            setIsSubmitted(false); // Reset submission status
+            
+            // Reload questions with new count
+            if (courseId) {
+                const loadedQuestions = getQuestionsByCourseId(courseId);
+                const shuffled = [...loadedQuestions].sort(() => 0.5 - Math.random());
+                setQuestions(shuffled.slice(0, newTotalQuestions));
+            }
+            
+            setIsSettingsModalVisible(false);
+            messageApi.success('Settings saved successfully. Test has been reset.');
+        });
+    };
+
+    const handleSettingsCancel = () => {
+        setIsSettingsModalVisible(false);
+    };
+
     if (isLoading) {
         return (
             <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>
@@ -359,7 +443,7 @@ const Test = () => {
                         </Space>
 
                         <Progress
-                            percent={Math.round((Object.keys(answers).length / TOTAL_QUESTIONS) * 100)}
+                            percent={Math.round((Object.keys(answers).length / totalQuestions) * 100)}
                             status="active"
                             size="small"
                         />
@@ -409,26 +493,49 @@ const Test = () => {
             }}>
                 <Space direction="vertical" style={{width: '100%', height: '100%'}} size={16}>
                     <div>
-                        <Title level={4} style={{margin: 0, marginBottom: '8px'}}>{testName}</Title>
-                        <Space style={{justifyContent: 'space-between', width: '100%'}}>
+                        <Space style={{justifyContent: 'space-between', width: '100%', alignItems: 'flex-start'}}>
+                            <div style={{flex: 1}}>
+                                <Title level={4} style={{margin: 0, marginBottom: '8px'}}>{testName}</Title>
+                            </div>
                             <Button
-                                size="small"
-                                icon={<LeftOutlined/>}
-                                onClick={handlePrevQuestion}
-                                disabled={currentQuestionIndex === 0}
-                            >
-                                Previous
-                            </Button>
-                            <Text strong>Question {currentQuestionIndex + 1} of {questions.length}</Text>
-                            <Button
-                                size="small"
-                                icon={<RightOutlined/>}
-                                onClick={handleNextQuestion}
-                                disabled={currentQuestionIndex === questions.length - 1}
-                            >
-                                Next
-                            </Button>
+                                type="text"
+                                icon={<SettingOutlined />}
+                                onClick={handleOpenSettings}
+                                style={{
+                                    marginLeft: '16px',
+                                    borderRadius: '6px',
+                                    height: '32px',
+                                    width: '32px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                title="Test Settings"
+                                disabled={isSubmitted}
+                            />
                         </Space>
+                        
+                        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '8px'}}>
+                            <Space size="large">
+                                <Button
+                                    size="small"
+                                    icon={<LeftOutlined/>}
+                                    onClick={handlePrevQuestion}
+                                    disabled={currentQuestionIndex === 0}
+                                >
+                                    Previous
+                                </Button>
+                                <Text strong>Question {currentQuestionIndex + 1} of {questions.length}</Text>
+                                <Button
+                                    size="small"
+                                    icon={<RightOutlined/>}
+                                    onClick={handleNextQuestion}
+                                    disabled={currentQuestionIndex === questions.length - 1}
+                                >
+                                    Next
+                                </Button>
+                            </Space>
+                        </div>
                     </div>
 
                     <div style={{flex: 1, overflowY: 'auto'}}>
@@ -512,6 +619,66 @@ const Test = () => {
                         );
                     })()}
                 </div>
+            </Modal>
+
+            <Modal
+                title="Test Settings"
+                open={isSettingsModalVisible}
+                onOk={handleSettingsSave}
+                onCancel={handleSettingsCancel}
+                okText="Save"
+                cancelText="Cancel"
+                width={500}
+            >
+                <Form
+                    form={settingsForm}
+                    layout="vertical"
+                    style={{marginTop: '16px'}}
+                >
+                    <Form.Item
+                        label="Number of Questions"
+                        name="totalQuestions"
+                        rules={[
+                            { required: true, message: 'Please enter number of questions' },
+                            { type: 'number', min: 1, max: 100, message: 'Number of questions must be between 1 and 100' }
+                        ]}
+                    >
+                        <InputNumber
+                            style={{width: '100%'}}
+                            placeholder="Enter number of questions"
+                            min={1}
+                            max={100}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Test Duration (minutes)"
+                        name="testDuration"
+                        rules={[
+                            { required: true, message: 'Please enter test duration' },
+                            { type: 'number', min: 1, max: 480, message: 'Test duration must be between 1 and 480 minutes' }
+                        ]}
+                    >
+                        <InputNumber
+                            style={{width: '100%'}}
+                            placeholder="Enter test duration in minutes"
+                            min={1}
+                            max={480}
+                        />
+                    </Form.Item>
+
+                    <Divider />
+
+                    <Space direction="vertical" style={{width: '100%'}} size={8}>
+                        <Text type="secondary">
+                            <ClockCircleOutlined style={{marginRight: 8}}/>
+                            Current time remaining: {formatTime(timeLeft)}
+                        </Text>
+                        <Text type="secondary">
+                            Questions answered: {Object.keys(answers).length} / {totalQuestions}
+                        </Text>
+                    </Space>
+                </Form>
             </Modal>
         </div>
     );
