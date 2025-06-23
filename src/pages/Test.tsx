@@ -12,6 +12,15 @@ import {
     RightOutlined,
     SettingOutlined
 } from '@ant-design/icons';
+import {
+    getSeenQuestions,
+    setSeenQuestions,
+    getWrongQuestions,
+    setWrongQuestions,
+    resetWrongQuestions,
+    getTestingOptions,
+    setTestingOptions
+} from '../utils/testStorage';
 
 const {Title, Text} = Typography;
 
@@ -144,40 +153,14 @@ const Test = () => {
     const [settingsForm] = Form.useForm();
     const [markedQuestions, setMarkedQuestions] = useState<number[]>([]);
 
-    // Helper for wrong questions localStorage
-    const getWrongQuestionsKey = (courseId: string) => `test_wrong_questions_${courseId}`;
-    const getWrongQuestions = (courseId: string) => {
-        if (!courseId) return [];
-        const raw = localStorage.getItem(getWrongQuestionsKey(courseId));
-        if (!raw) return [];
-        try {
-            return JSON.parse(raw) as string[];
-        } catch {
-            return [];
-        }
-    };
-    const setWrongQuestions = (courseId: string, ids: string[]) => {
-        if (!courseId) return;
-        localStorage.setItem(getWrongQuestionsKey(courseId), JSON.stringify(ids));
-    };
-    const resetWrongQuestions = (courseId: string) => {
-        if (!courseId) return;
-        localStorage.removeItem(getWrongQuestionsKey(courseId));
-    };
-
     // Helper function to load testing options from localStorage
     const loadTestingOptions = () => {
-        const savedOptions = localStorage.getItem('testing_options');
+        const savedOptions = getTestingOptions();
         if (savedOptions) {
-            try {
-                const options = JSON.parse(savedOptions);
-                return {
-                    testDuration: options.testDuration || DEFAULT_TEST_DURATION,
-                    totalQuestions: options.totalQuestions || DEFAULT_TOTAL_QUESTIONS
-                };
-            } catch (error) {
-                console.error('Failed to parse testing options from localStorage:', error);
-            }
+            return {
+                testDuration: savedOptions.testDuration || DEFAULT_TEST_DURATION,
+                totalQuestions: savedOptions.totalQuestions || DEFAULT_TOTAL_QUESTIONS
+            };
         }
         return {
             testDuration: DEFAULT_TEST_DURATION,
@@ -216,27 +199,38 @@ const Test = () => {
                 }
 
                 const loadedQuestions = getQuestionsByCourseId(courseId);
-                const seenIds = getWrongQuestions(courseId);
+                const seenIds = getSeenQuestions(courseId);
+                const wrongIds = getWrongQuestions(courseId);
+
+                // Lấy 10% từ câu đã xuất hiện (ưu tiên câu sai), 90% từ câu mới
+                const numRepeat = Math.floor(totalQuestions * 0.1);
+                const numNew = totalQuestions - numRepeat;
+
+                // Lấy câu lặp lại (ưu tiên câu sai)
                 const seenQuestions = loadedQuestions.filter(q => seenIds.includes(q.id));
-                const unseenQuestions = loadedQuestions.filter(q => !seenIds.includes(q.id));
+                const wrongQuestions = seenQuestions.filter(q => wrongIds.includes(q.id));
+                const otherSeenQuestions = seenQuestions.filter(q => !wrongIds.includes(q.id));
 
-                // Calculate the number of wrong questions to repeat (10%)
-                const numSeen = Math.min(Math.floor(totalQuestions * 0.1), seenQuestions.length);
-                const numUnseen = totalQuestions - numSeen;
+                // Ưu tiên lấy câu sai trước, sau đó lấy câu đã xuất hiện khác
+                const repeatQuestions = [
+                    ...wrongQuestions.sort(() => 0.5 - Math.random()).slice(0, numRepeat),
+                    ...otherSeenQuestions.sort(() => 0.5 - Math.random()).slice(0, Math.max(0, numRepeat - wrongQuestions.length))
+                ].slice(0, numRepeat);
 
-                // Randomly select 10% from wrong questions, the rest from new questions
-                const shuffledSeen = [...seenQuestions].sort(() => 0.5 - Math.random()).slice(0, numSeen);
-                const shuffledUnseen = [...unseenQuestions].sort(() => 0.5 - Math.random()).slice(0, numUnseen);
-                const selectedQuestions = [...shuffledSeen, ...shuffledUnseen];
+                // Lấy câu mới
+                const newQuestions = loadedQuestions.filter(q => !seenIds.includes(q.id));
+                const selectedNewQuestions = [...newQuestions].sort(() => 0.5 - Math.random()).slice(0, numNew);
 
-                // If not enough, fill up with random questions from all
+                const selectedQuestions = [...repeatQuestions, ...selectedNewQuestions];
+
+                // Nếu chưa đủ, random bù từ toàn bộ
                 while (selectedQuestions.length < totalQuestions) {
                     const remain = loadedQuestions.filter(q => !selectedQuestions.includes(q));
                     if (remain.length === 0) break;
                     selectedQuestions.push(remain[Math.floor(Math.random() * remain.length)]);
                 }
 
-                // Shuffle again to mix wrong questions and new questions
+                // Shuffle lại
                 const finalQuestions = [...selectedQuestions].sort(() => 0.5 - Math.random());
                 setQuestions(finalQuestions);
 
@@ -254,7 +248,6 @@ const Test = () => {
             }
         };
 
-        // Only load questions if we have a courseId and totalQuestions is set
         if (courseId && totalQuestions > 0) {
             loadQuestions();
         }
@@ -339,22 +332,38 @@ const Test = () => {
         setIsResultsModalVisible(true);
         setIsSubmitConfirmVisible(false);
 
-        // Lưu lại danh sách các câu hỏi bị trả lời sai
         if (courseId && questions.length > 0) {
-            const wrongIds = questions
-                .map((q, idx) => {
-                    const userAnswers = answers[idx] || [];
-                    const correctAnswers = q.answer.split(',');
-                    const isCorrect =
-                        userAnswers.length === correctAnswers.length &&
-                        userAnswers.every(a => correctAnswers.includes(a)) &&
-                        correctAnswers.every(a => userAnswers.includes(a));
-                    return isCorrect ? null : q.id;
-                })
-                .filter(Boolean) as string[];
+            // Lưu tất cả câu hỏi đã xuất hiện
+            const currentQuestionIds = questions.map(q => q.id);
+            const prevSeen = getSeenQuestions(courseId);
+            setSeenQuestions(courseId, Array.from(new Set([...prevSeen, ...currentQuestionIds])));
+
+            // Cập nhật danh sách câu sai
             const prevWrong = getWrongQuestions(courseId);
-            const merged = Array.from(new Set([...prevWrong, ...wrongIds]));
-            setWrongQuestions(courseId, merged);
+            const newWrongIds: string[] = [];
+            const correctIds: string[] = [];
+
+            questions.forEach((q, idx) => {
+                const userAnswers = answers[idx] || [];
+                const correctAnswers = q.answer.split(',');
+                const isCorrect =
+                    userAnswers.length === correctAnswers.length &&
+                    userAnswers.every(a => correctAnswers.includes(a)) &&
+                    correctAnswers.every(a => userAnswers.includes(a));
+                
+                if (isCorrect) {
+                    correctIds.push(q.id);
+                } else {
+                    newWrongIds.push(q.id);
+                }
+            });
+
+            // Gỡ câu sai đã trả lời đúng, thêm câu mới sai
+            const updatedWrong = [
+                ...prevWrong.filter(id => !correctIds.includes(id)), // Gỡ câu sai đã trả lời đúng
+                ...newWrongIds // Thêm câu mới sai
+            ];
+            setWrongQuestions(courseId, Array.from(new Set(updatedWrong)));
         }
     };
 
@@ -434,12 +443,11 @@ const Test = () => {
             const newTotalQuestions = values.totalQuestions;
             const newTestDuration = values.testDuration * 60; // Convert minutes to seconds
             
-            // Save to localStorage
-            const testingOptions = {
+            // Save to localStorage using helper function
+            setTestingOptions({
                 testDuration: newTestDuration,
                 totalQuestions: newTotalQuestions
-            };
-            localStorage.setItem('testing_options', JSON.stringify(testingOptions));
+            });
             
             setTotalQuestions(newTotalQuestions);
             setTestDuration(newTestDuration);
@@ -457,6 +465,11 @@ const Test = () => {
             
             setIsSettingsModalVisible(false);
             messageApi.success('Settings saved successfully. Test has been reset.');
+            
+            // Reload the page after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         });
     };
 

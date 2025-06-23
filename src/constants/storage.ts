@@ -2,6 +2,9 @@ export const STORAGE_KEYS = {
     COURSES: 'courses',
     QUIZ_STATE: 'quiz_state',
     COURSE_PROGRESS: 'courseProgress',
+    TESTING_OPTIONS: 'testing_options',
+    TEST_SEEN_QUESTIONS: 'test_seen_questions',
+    TEST_WRONG_QUESTIONS: 'test_wrong_questions',
 } as const;
 
 export const CHATGPT_HISTORY_KEY = 'chatgpt_history';
