@@ -24,13 +24,17 @@ const QuestionCard = ({
                           index,
                           selectedAnswers,
                           onOptionChange,
-                          isReviewMode = false
+                          isReviewMode = false,
+                          markedQuestions,
+                          handleToggleMark
                       }: {
     question: Question;
     index: number;
     selectedAnswers: string[];
     onOptionChange: (index: number, key: string, checked: boolean) => void;
     isReviewMode?: boolean;
+    markedQuestions: number[];
+    handleToggleMark: (index: number) => void;
 }) => {
     const correctAnswers = question.answer.split(',');
     const isMultipleAnswer = correctAnswers.length > 1;
@@ -63,7 +67,17 @@ const QuestionCard = ({
     return (
         <Card size="small">
             <Space direction="vertical" style={{width: '100%'}} size={8}>
-                <Text strong>Question {index + 1}:</Text>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8}}>
+                    <Text strong>Question {index + 1}:</Text>
+                    <Checkbox
+                        checked={markedQuestions.includes(index)}
+                        onChange={() => handleToggleMark(index)}
+                        disabled={isReviewMode}
+                        style={{marginLeft: 8}}
+                    >
+                        Mark for review
+                    </Checkbox>
+                </div>
                 <div dangerouslySetInnerHTML={{__html: question.question}} style={{whiteSpace: 'pre-line'}}/>
                 <Space direction="vertical" style={{width: '100%'}}>
                     {Object.entries(question.options).map(([key, value]) => (
@@ -128,6 +142,28 @@ const Test = () => {
     const [totalQuestions, setTotalQuestions] = useState(DEFAULT_TOTAL_QUESTIONS);
     const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
     const [settingsForm] = Form.useForm();
+    const [markedQuestions, setMarkedQuestions] = useState<number[]>([]);
+
+    // Helper for wrong questions localStorage
+    const getWrongQuestionsKey = (courseId: string) => `test_wrong_questions_${courseId}`;
+    const getWrongQuestions = (courseId: string) => {
+        if (!courseId) return [];
+        const raw = localStorage.getItem(getWrongQuestionsKey(courseId));
+        if (!raw) return [];
+        try {
+            return JSON.parse(raw) as string[];
+        } catch {
+            return [];
+        }
+    };
+    const setWrongQuestions = (courseId: string, ids: string[]) => {
+        if (!courseId) return;
+        localStorage.setItem(getWrongQuestionsKey(courseId), JSON.stringify(ids));
+    };
+    const resetWrongQuestions = (courseId: string) => {
+        if (!courseId) return;
+        localStorage.removeItem(getWrongQuestionsKey(courseId));
+    };
 
     // Helper function to load testing options from localStorage
     const loadTestingOptions = () => {
@@ -180,21 +216,35 @@ const Test = () => {
                 }
 
                 const loadedQuestions = getQuestionsByCourseId(courseId);
-                // if (loadedQuestions.length < TOTAL_QUESTIONS) {
-                //     messageApi.error('Not enough questions for a full test');
-                //     navigate('/');
-                //     return;
-                // }
+                const seenIds = getWrongQuestions(courseId);
+                const seenQuestions = loadedQuestions.filter(q => seenIds.includes(q.id));
+                const unseenQuestions = loadedQuestions.filter(q => !seenIds.includes(q.id));
+
+                // Calculate the number of wrong questions to repeat (10%)
+                const numSeen = Math.min(Math.floor(totalQuestions * 0.1), seenQuestions.length);
+                const numUnseen = totalQuestions - numSeen;
+
+                // Randomly select 10% from wrong questions, the rest from new questions
+                const shuffledSeen = [...seenQuestions].sort(() => 0.5 - Math.random()).slice(0, numSeen);
+                const shuffledUnseen = [...unseenQuestions].sort(() => 0.5 - Math.random()).slice(0, numUnseen);
+                const selectedQuestions = [...shuffledSeen, ...shuffledUnseen];
+
+                // If not enough, fill up with random questions from all
+                while (selectedQuestions.length < totalQuestions) {
+                    const remain = loadedQuestions.filter(q => !selectedQuestions.includes(q));
+                    if (remain.length === 0) break;
+                    selectedQuestions.push(remain[Math.floor(Math.random() * remain.length)]);
+                }
+
+                // Shuffle again to mix wrong questions and new questions
+                const finalQuestions = [...selectedQuestions].sort(() => 0.5 - Math.random());
+                setQuestions(finalQuestions);
 
                 // Get test name from courseId
                 const course = getCourseById(courseId);
                 if (course) {
                     setTestName(course.name);
                 }
-
-                // Randomly select questions based on totalQuestions state
-                const shuffled = [...loadedQuestions].sort(() => 0.5 - Math.random());
-                setQuestions(shuffled.slice(0, totalQuestions));
             } catch (error) {
                 console.log(error);
                 messageApi.error('Failed to load questions');
@@ -216,9 +266,12 @@ const Test = () => {
             timer = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
+        } else if (isTimerRunning && timeLeft === 0 && !isSubmitted) {
+            // Time is up, auto submit
+            handleConfirmSubmit();
         }
         return () => clearInterval(timer);
-    }, [isTimerRunning, timeLeft]);
+    }, [isTimerRunning, timeLeft, isSubmitted]);
 
     const formatTime = (seconds: number) => {
         const hours = Math.floor(seconds / 3600);
@@ -256,30 +309,24 @@ const Test = () => {
 
     const calculateScore = useCallback(() => {
         let correct = 0;
-        let answered = 0;
         questions.forEach((question, index) => {
             const userAnswers = answers[index] || [];
-            if (userAnswers.length > 0) {
-                answered++;
-                const correctAnswers = question.answer.split(',');
-
-                const isAnswerCorrect =
-                    userAnswers.length === correctAnswers.length &&
-                    userAnswers.every(answer => correctAnswers.includes(answer)) &&
-                    correctAnswers.every(answer => userAnswers.includes(answer));
-
-                if (isAnswerCorrect) {
-                    correct++;
-                }
+            const correctAnswers = question.answer.split(',');
+            const isAnswerCorrect =
+                userAnswers.length === correctAnswers.length &&
+                userAnswers.every(answer => correctAnswers.includes(answer)) &&
+                correctAnswers.every(answer => userAnswers.includes(answer));
+            if (isAnswerCorrect) {
+                correct++;
             }
         });
+        const total = questions.length;
         return {
             correct,
-            answered,
-            total: totalQuestions,
-            percentage: answered > 0 ? Math.round((correct / answered) * 100) : 0
+            total,
+            percentage: total > 0 ? Math.round((correct / total) * 100) : 0
         };
-    }, [questions, answers, totalQuestions]);
+    }, [questions, answers]);
 
     const handleSubmit = () => {
         if (isSubmitted) return;
@@ -291,6 +338,24 @@ const Test = () => {
         setIsTimerRunning(false);
         setIsResultsModalVisible(true);
         setIsSubmitConfirmVisible(false);
+
+        // Lưu lại danh sách các câu hỏi bị trả lời sai
+        if (courseId && questions.length > 0) {
+            const wrongIds = questions
+                .map((q, idx) => {
+                    const userAnswers = answers[idx] || [];
+                    const correctAnswers = q.answer.split(',');
+                    const isCorrect =
+                        userAnswers.length === correctAnswers.length &&
+                        userAnswers.every(a => correctAnswers.includes(a)) &&
+                        correctAnswers.every(a => userAnswers.includes(a));
+                    return isCorrect ? null : q.id;
+                })
+                .filter(Boolean) as string[];
+            const prevWrong = getWrongQuestions(courseId);
+            const merged = Array.from(new Set([...prevWrong, ...wrongIds]));
+            setWrongQuestions(courseId, merged);
+        }
     };
 
     const handleExit = () => {
@@ -399,6 +464,15 @@ const Test = () => {
         setIsSettingsModalVisible(false);
     };
 
+    // Toggle mark for review
+    const handleToggleMark = (index: number) => {
+        setMarkedQuestions(prev =>
+            prev.includes(index)
+                ? prev.filter(i => i !== index)
+                : [...prev, index]
+        );
+    };
+
     if (isLoading) {
         return (
             <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>
@@ -452,15 +526,33 @@ const Test = () => {
                             <Row gutter={[4, 4]}>
                                 {questions.map((_, index) => (
                                     <Col span={4} key={index}>
-                                        <Button
-                                            key={index}
-                                            size="small"
-                                            type={currentQuestionIndex === index ? 'primary' : 'default'}
-                                            style={getQuestionButtonStyle(index)}
-                                            onClick={() => handleQuestionClick(index)}
-                                        >
-                                            {index + 1}
-                                        </Button>
+                                        <div style={{width: '100%', position: 'relative', display: 'block'}}>
+                                            <Button
+                                                key={index}
+                                                size="small"
+                                                type={currentQuestionIndex === index ? 'primary' : 'default'}
+                                                style={{...getQuestionButtonStyle(index)}}
+                                                onClick={() => handleQuestionClick(index)}
+                                            >
+                                                {index + 1}
+                                            </Button>
+                                            {markedQuestions.includes(index) && (
+                                                <span
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        right: 0,
+                                                        width: 0,
+                                                        height: 0,
+                                                        borderTop: '12px solid #ff4d4f',
+                                                        borderLeft: '12px solid transparent',
+                                                        borderTopRightRadius: '4px',
+                                                        zIndex: 2,
+                                                        pointerEvents: 'none',
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
                                     </Col>
                                 ))}
                             </Row>
@@ -545,6 +637,8 @@ const Test = () => {
                             selectedAnswers={answers[currentQuestionIndex] || []}
                             onOptionChange={handleOptionChange}
                             isReviewMode={isSubmitted}
+                            markedQuestions={markedQuestions}
+                            handleToggleMark={handleToggleMark}
                         />
                     </div>
                 </Space>
@@ -595,7 +689,7 @@ const Test = () => {
                                 <div style={{textAlign: 'center'}}>
                                     <Title level={2} style={{margin: 0}}>{score.percentage}%</Title>
                                     <Text type="secondary">
-                                        {score.correct} correct out of {score.answered} answered questions
+                                        {score.correct} correct out of {score.total} questions
                                     </Text>
                                 </div>
                                 <Progress
@@ -626,8 +720,30 @@ const Test = () => {
                 open={isSettingsModalVisible}
                 onOk={handleSettingsSave}
                 onCancel={handleSettingsCancel}
-                okText="Save"
-                cancelText="Cancel"
+                footer={[
+                    <Button
+                        key="reset"
+                        type="default"
+                        danger
+                        onClick={() => {
+                            if (courseId) {
+                                resetWrongQuestions(courseId);
+                                messageApi.success('Đã reset lịch sử câu hỏi!');
+                                setTimeout(() => window.location.reload(), 500);
+                            }
+                        }}
+                        style={{float: 'left'}}
+                        disabled={isSubmitted}
+                    >
+                        Reset Test
+                    </Button>,
+                    <Button key="cancel" onClick={handleSettingsCancel}>
+                        Cancel
+                    </Button>,
+                    <Button key="save" type="primary" onClick={handleSettingsSave}>
+                        Save
+                    </Button>
+                ]}
                 width={500}
             >
                 <Form
