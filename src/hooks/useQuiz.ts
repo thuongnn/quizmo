@@ -57,21 +57,21 @@ export const useQuiz = (courseId: string | null) => {
     const prepareQuestionsForTurn = (allQuestions: Question[], previousIncorrectQuestions: Question[]) => {
         let turnQuestions: Question[] = [];
 
-        // If we have previous incorrect questions and it's not the first turn
-        if (previousIncorrectQuestions.length > 0 && currentIndex > 0) {
-            // Randomly select review questions from previous incorrect questions
-            const shuffledIncorrect = [...previousIncorrectQuestions].sort(() => 0.5 - Math.random());
-            const reviewQuestions = shuffledIncorrect.slice(0, REVIEW_QUESTIONS_PER_TURN);
-            turnQuestions = [...reviewQuestions];
-        }
+        // Ưu tiên lấy REVIEW_QUESTIONS_PER_TURN từ incorrectQuestions (không lấy trùng)
+        const shuffledIncorrect = [...previousIncorrectQuestions].sort(() => 0.5 - Math.random());
+        const reviewQuestions = shuffledIncorrect.slice(0, REVIEW_QUESTIONS_PER_TURN);
+        turnQuestions = [...reviewQuestions];
+
+        // Loại bỏ các câu đã làm đúng khỏi pool random
+        const learnedIds = new Set(learnedQuestions.map(q => q.id));
+        const incorrectIds = new Set(reviewQuestions.map(q => q.id));
+        const availableQuestions = allQuestions.filter(q =>
+            !learnedIds.has(q.id) && !incorrectIds.has(q.id)
+        );
 
         // Fill remaining slots with new questions
         const remainingSlots = QUESTIONS_PER_TURN - turnQuestions.length;
-        const availableQuestions = allQuestions.filter(q =>
-            !turnQuestions.some(tq => tq.question === q.question) &&
-            !learnedQuestions.some(lq => lq.question === q.question)
-        );
-        turnQuestions = [...turnQuestions, ...availableQuestions.slice(0, remainingSlots)];
+        turnQuestions = [...turnQuestions, ...availableQuestions.sort(() => 0.5 - Math.random()).slice(0, remainingSlots)];
         setQuestions(turnQuestions);
     };
 
