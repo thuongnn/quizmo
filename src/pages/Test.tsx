@@ -45,7 +45,7 @@ const QuestionCard = ({
     markedQuestions: number[];
     handleToggleMark: (index: number) => void;
 }) => {
-    const correctAnswers = question.answer.split(',');
+    const correctAnswers = question.answer.split(',').map(a => a.trim());
     const isMultipleAnswer = correctAnswers.length > 1;
 
     const isOptionCorrect = (key: string) => {
@@ -276,7 +276,7 @@ const Test = () => {
     const handleOptionChange = useCallback((questionIndex: number, key: string, checked: boolean) => {
         setAnswers(prev => {
             const currentAnswers = prev[questionIndex] || [];
-            const correctAnswers = questions[questionIndex].answer.split(',');
+            const correctAnswers = questions[questionIndex].answer.split(',').map(a => a.trim());
             const isMultipleAnswer = correctAnswers.length > 1;
 
             if (isMultipleAnswer) {
@@ -304,7 +304,7 @@ const Test = () => {
         let correct = 0;
         questions.forEach((question, index) => {
             const userAnswers = answers[index] || [];
-            const correctAnswers = question.answer.split(',');
+            const correctAnswers = question.answer.split(',').map(a => a.trim());
             const isAnswerCorrect =
                 userAnswers.length === correctAnswers.length &&
                 userAnswers.every(answer => correctAnswers.includes(answer)) &&
@@ -345,7 +345,7 @@ const Test = () => {
 
             questions.forEach((q, idx) => {
                 const userAnswers = answers[idx] || [];
-                const correctAnswers = q.answer.split(',');
+                const correctAnswers = q.answer.split(',').map(a => a.trim());
                 const isCorrect =
                     userAnswers.length === correctAnswers.length &&
                     userAnswers.every(a => correctAnswers.includes(a)) &&
@@ -364,6 +364,15 @@ const Test = () => {
                 ...newWrongIds // Thêm câu mới sai
             ];
             setWrongQuestions(courseId, Array.from(new Set(updatedWrong)));
+            
+            // Debug log
+            console.log('Test submission debug:', {
+                courseId,
+                prevWrong,
+                correctIds,
+                newWrongIds,
+                updatedWrong
+            });
         }
     };
 
@@ -397,11 +406,13 @@ const Test = () => {
 
     const getQuestionButtonStyle = (index: number) => {
         const isAnswered = answers[index] !== undefined;
-        const isCorrect = isSubmitted && isAnswered &&
-            (Array.isArray(answers[index])
-                ? new Set(answers[index]).size === new Set(questions[index].answer.split(',').map(a => a.trim())).size &&
-                new Set(answers[index]).size === new Set([...answers[index], ...questions[index].answer.split(',').map(a => a.trim())]).size
-                : answers[index] === questions[index].answer);
+        const isCorrect = isSubmitted && isAnswered && (() => {
+            const userAnswers = answers[index] || [];
+            const correctAnswers = questions[index].answer.split(',').map(a => a.trim());
+            return userAnswers.length === correctAnswers.length &&
+                userAnswers.every(a => correctAnswers.includes(a)) &&
+                correctAnswers.every(a => userAnswers.includes(a));
+        })();
 
         return {
             width: '100%',

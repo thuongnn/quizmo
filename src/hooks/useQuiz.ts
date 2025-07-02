@@ -91,7 +91,7 @@ export const useQuiz = (courseId: string | null) => {
             return;
         }
 
-        const correctAnswers = questions[currentIndex].answer.split(',');
+        const correctAnswers = questions[currentIndex].answer.split(',').map(a => a.trim());
         // Check if all selected answers are correct and all correct answers are selected
         const isAnswerCorrect =
             selectedAnswers.length === correctAnswers.length &&
@@ -196,7 +196,7 @@ export const useQuiz = (courseId: string | null) => {
     };
 
     const handleOptionChange = (key: string, checked: boolean) => {
-        const correctAnswers = questions[currentIndex].answer.split(',');
+        const correctAnswers = questions[currentIndex].answer.split(',').map(a => a.trim());
         const isMultipleAnswer = correctAnswers.length > 1;
 
         if (isMultipleAnswer) {
