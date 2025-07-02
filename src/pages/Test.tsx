@@ -202,14 +202,16 @@ const Test = () => {
                 const seenIds = getSeenQuestions(courseId);
                 const wrongIds = getWrongQuestions(courseId);
 
-                // Lấy 10% từ câu đã xuất hiện (ưu tiên câu sai), 90% từ câu mới
-                const numRepeat = Math.floor(totalQuestions * 0.1);
-                const numNew = totalQuestions - numRepeat;
-
                 // Lấy câu lặp lại (ưu tiên câu sai)
                 const seenQuestions = loadedQuestions.filter(q => seenIds.includes(q.id));
                 const wrongQuestions = seenQuestions.filter(q => wrongIds.includes(q.id));
                 const otherSeenQuestions = seenQuestions.filter(q => !wrongIds.includes(q.id));
+
+                // Tính số câu lặp lại: tối đa 50% từ câu sai, tối thiểu 10% từ câu đã xuất hiện
+                const maxRepeatFromWrong = Math.floor(totalQuestions * 0.5); // Tối đa 50% từ câu sai
+                const minRepeat = Math.floor(totalQuestions * 0.1); // Tối thiểu 10% lặp lại
+                const numRepeat = Math.max(minRepeat, Math.min(maxRepeatFromWrong, wrongQuestions.length));
+                const numNew = totalQuestions - numRepeat;
 
                 // Ưu tiên lấy câu sai trước, sau đó lấy câu đã xuất hiện khác
                 const repeatQuestions = [
@@ -233,6 +235,21 @@ const Test = () => {
                 // Shuffle lại
                 const finalQuestions = [...selectedQuestions].sort(() => 0.5 - Math.random());
                 setQuestions(finalQuestions);
+
+                // Debug log cho việc phân bổ câu hỏi
+                console.log('Question distribution debug:', {
+                    totalQuestions,
+                    maxRepeatFromWrong,
+                    minRepeat,
+                    numRepeat,
+                    numNew,
+                    wrongQuestionsCount: wrongQuestions.length,
+                    otherSeenQuestionsCount: otherSeenQuestions.length,
+                    newQuestionsCount: newQuestions.length,
+                    repeatQuestionsCount: repeatQuestions.length,
+                    selectedNewQuestionsCount: selectedNewQuestions.length,
+                    finalQuestionsCount: finalQuestions.length
+                });
 
                 // Get test name from courseId
                 const course = getCourseById(courseId);
