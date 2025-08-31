@@ -48,13 +48,23 @@ export const useQuiz = (courseId: string | null) => {
         if (savedState) {
             setIncorrectQuestions(savedState.incorrectQuestions || []);
             setLearnedQuestions(savedState.learnedQuestions || []);
+            // Prepare questions for current turn with loaded state
+            prepareQuestionsForTurn(
+                loadedQuestions, 
+                savedState?.incorrectQuestions || [], 
+                savedState?.learnedQuestions || []
+            );
+        } else {
+            // No saved state, prepare with empty learned questions
+            prepareQuestionsForTurn(loadedQuestions, [], []);
         }
-
-        // Prepare questions for current turn
-        prepareQuestionsForTurn(loadedQuestions, savedState?.incorrectQuestions || []);
     }, [courseId]);
 
-    const prepareQuestionsForTurn = (allQuestions: Question[], previousIncorrectQuestions: Question[]) => {
+    const prepareQuestionsForTurn = (
+        allQuestions: Question[], 
+        previousIncorrectQuestions: Question[], 
+        currentLearnedQuestions: Question[] = learnedQuestions
+    ) => {
         let turnQuestions: Question[] = [];
 
         // Ưu tiên lấy REVIEW_QUESTIONS_PER_TURN từ incorrectQuestions (không lấy trùng)
@@ -62,17 +72,27 @@ export const useQuiz = (courseId: string | null) => {
         const reviewQuestions = shuffledIncorrect.slice(0, REVIEW_QUESTIONS_PER_TURN);
         turnQuestions = [...reviewQuestions];
 
-        // Loại bỏ các câu đã làm đúng khỏi pool random
-        const learnedIds = new Set(learnedQuestions.map(q => q.id));
-        const incorrectIds = new Set(reviewQuestions.map(q => q.id));
+        // Loại bỏ các câu đã làm đúng và TẤT CẢ incorrect questions khỏi pool random
+        const learnedIds = new Set(currentLearnedQuestions.map(q => q.id));
+        const allIncorrectIds = new Set(previousIncorrectQuestions.map(q => q.id)); // Fix: Exclude all incorrect
         const availableQuestions = allQuestions.filter(q =>
-            !learnedIds.has(q.id) && !incorrectIds.has(q.id)
+            !learnedIds.has(q.id) && !allIncorrectIds.has(q.id)
         );
 
         // Fill remaining slots with new questions
         const remainingSlots = QUESTIONS_PER_TURN - turnQuestions.length;
-        turnQuestions = [...turnQuestions, ...availableQuestions.sort(() => 0.5 - Math.random()).slice(0, remainingSlots)];
-        setQuestions(turnQuestions);
+        const finalQuestions = [...turnQuestions, ...availableQuestions.sort(() => 0.5 - Math.random()).slice(0, remainingSlots)];
+        
+        console.log('🔍 prepareQuestionsForTurn Debug:', {
+            totalQuestions: allQuestions.length,
+            learnedCount: currentLearnedQuestions.length,
+            incorrectCount: previousIncorrectQuestions.length,
+            reviewCount: reviewQuestions.length,
+            availableCount: availableQuestions.length,
+            finalCount: finalQuestions.length
+        });
+        
+        setQuestions(finalQuestions);
     };
 
     const playSound = (isCorrect: boolean) => {
@@ -109,13 +129,6 @@ export const useQuiz = (courseId: string | null) => {
             setLearnedQuestions(prev => {
                 if (!prev.some(q => q.question === currentQuestion.question)) {
                     const updated = [...prev, currentQuestion];
-                    // Save to localStorage
-                    const oldState = getQuizState(courseId!);
-                    saveQuizState(courseId!, {
-                        incorrectQuestions,
-                        learnedQuestions: updated,
-                        chatgptHistory: oldState?.chatgptHistory || [],
-                    });
                     return updated;
                 }
                 return prev;
@@ -126,31 +139,46 @@ export const useQuiz = (courseId: string | null) => {
             if (isReviewQuestion) {
                 setIncorrectQuestions(prev => {
                     const updated = prev.filter(q => q.question !== currentQuestion.question);
-                    // Save to localStorage
-                    const oldState = getQuizState(courseId!);
-                    saveQuizState(courseId!, {
-                        incorrectQuestions: updated,
-                        learnedQuestions,
-                        chatgptHistory: oldState?.chatgptHistory || [],
-                    });
                     return updated;
                 });
                 message.success('Great job! This question has been removed from review.', 2);
             }
+
+            // Save state after all updates (use setTimeout to ensure state updates)
+            setTimeout(() => {
+                const currentState = getQuizState(courseId!);
+                const updatedLearnedQuestions = learnedQuestions.some(q => q.question === currentQuestion.question) 
+                    ? learnedQuestions 
+                    : [...learnedQuestions, currentQuestion];
+                const updatedIncorrectQuestions = isReviewQuestion 
+                    ? incorrectQuestions.filter(q => q.question !== currentQuestion.question)
+                    : incorrectQuestions;
+                    
+                saveQuizState(courseId!, {
+                    incorrectQuestions: updatedIncorrectQuestions,
+                    learnedQuestions: updatedLearnedQuestions,
+                    chatgptHistory: currentState?.chatgptHistory || [],
+                });
+            }, 0);
         } else {
             playSound(false);
             message.error('Incorrect!', 1);
             // Add to incorrect questions if not already present
+            const currentQuestion = questions[currentIndex];
             setIncorrectQuestions(prev => {
-                if (!prev.some(q => q.question === questions[currentIndex].question)) {
-                    const updated = [...prev, questions[currentIndex]];
-                    // Save to localStorage
-                    const oldState = getQuizState(courseId!);
-                    saveQuizState(courseId!, {
-                        incorrectQuestions: updated,
-                        learnedQuestions,
-                        chatgptHistory: oldState?.chatgptHistory || [],
-                    });
+                if (!prev.some(q => q.question === currentQuestion.question)) {
+                    const updated = [...prev, currentQuestion];
+                    
+                    // Save state immediately for incorrect answers
+                    setTimeout(() => {
+                        const currentState = getQuizState(courseId!);
+                        saveQuizState(courseId!, {
+                            incorrectQuestions: updated,
+                            learnedQuestions,
+                            chatgptHistory: currentState?.chatgptHistory || [],
+                        });
+                    }, 0);
+                    
                     return updated;
                 }
                 return prev;
@@ -173,9 +201,14 @@ export const useQuiz = (courseId: string | null) => {
             setShowResult(false);
             setIsCorrect(null);
 
-            // Prepare questions for next turn
+            // Prepare questions for next turn - use latest state from localStorage
             const allQuestions = getQuestionsByCourseId(courseId!);
-            prepareQuestionsForTurn(allQuestions, incorrectQuestions);
+            const latestState = getQuizState(courseId!);
+            prepareQuestionsForTurn(
+                allQuestions, 
+                latestState?.incorrectQuestions || incorrectQuestions,
+                latestState?.learnedQuestions || learnedQuestions
+            );
         }
     };
 
@@ -190,7 +223,7 @@ export const useQuiz = (courseId: string | null) => {
 
         // Prepare questions for new turn
         const allQuestions = getQuestionsByCourseId(courseId!);
-        prepareQuestionsForTurn(allQuestions, []);
+        prepareQuestionsForTurn(allQuestions, [], []);
 
         message.success('Quiz has been reset');
     };
